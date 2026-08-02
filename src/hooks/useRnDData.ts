@@ -15,7 +15,19 @@ import type {
   Trend,
 } from "@/lib/rnd-types";
 
-async function selectAll<T>(table: string, order: string, ascending = false): Promise<T[]> {
+type RnDTable =
+  | "rnd_ideas"
+  | "rnd_prototypes"
+  | "rnd_impact_analyses"
+  | "rnd_trends"
+  | "rnd_market_gaps"
+  | "rnd_feedback"
+  | "rnd_decisions"
+  | "rnd_technologies"
+  | "rnd_pipeline_items"
+  | "rnd_transactions";
+
+async function selectAll<T>(table: RnDTable, order: string, ascending = false): Promise<T[]> {
   const { data, error } = await supabase.from(table).select("*").order(order, { ascending });
   if (error) throw new Error(error.message);
   return (data ?? []) as T[];
