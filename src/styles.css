@@ -4,6 +4,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Software Vala design system — dark-first violet/cyan command surface. */
+
 /*
  * Design system definition.
  *
