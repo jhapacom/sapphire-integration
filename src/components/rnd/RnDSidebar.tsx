@@ -1,115 +1,84 @@
 import { motion } from "framer-motion";
-import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Users, 
-  ListTodo, 
-  Lightbulb, 
-  Wallet, 
-  Bell, 
-  BarChart3, 
-  User,
-  PlayCircle,
-  ArrowLeft,
-  LogOut,
-  Lock,
-  KeyRound
+import {
+  Lightbulb,
+  Bot,
+  Target,
+  Radar,
+  Rocket,
+  Blocks,
+  Gauge,
+  TrendingUp,
+  MessagesSquare,
+  Map,
+  Wallet,
+  Bell,
 } from "lucide-react";
-import softwareValaLogo from '@/assets/software-vala-logo.png';
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import logo from "@/assets/software-vala-logo.png";
+import { cn } from "@/lib/utils";
 
-const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-  { id: "lead-manager", label: "Lead Manager", icon: Users, path: "/lead-manager" },
-  { id: "task-manager", label: "Task Manager", icon: ListTodo, path: "/task-manager" },
-  { id: "rnd", label: "R&D Department", icon: Lightbulb, path: "/rnd-dashboard", active: true },
-  { id: "wallet", label: "Wallet", icon: Wallet, path: "/wallet" },
-  { id: "demo", label: "Demo Manager", icon: PlayCircle, path: "/demo-manager" },
-  { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications", badge: 5 },
-  { id: "performance", label: "Performance", icon: BarChart3, path: "/performance" },
-  { id: "profile", label: "Profile", icon: User, path: "/profile" },
-];
+export const rndSections = [
+  { id: "future-lab", label: "Future Lab", icon: Lightbulb },
+  { id: "ai-assistant", label: "AI Assistant", icon: Bot },
+  { id: "idea-scorer", label: "Idea Scorer", icon: Target },
+  { id: "tech-radar", label: "Tech Radar", icon: Radar },
+  { id: "pipeline", label: "Innovation Pipeline", icon: Rocket },
+  { id: "prototype", label: "Prototype Builder", icon: Blocks },
+  { id: "impact", label: "Impact Analyzer", icon: Gauge },
+  { id: "trends", label: "Trend Scanner", icon: TrendingUp },
+  { id: "feedback", label: "Feedback Portal", icon: MessagesSquare },
+  { id: "decisions", label: "Decision Board", icon: Map },
+  { id: "wallet", label: "R&D Budget", icon: Wallet },
+  { id: "notifications", label: "Notifications", icon: Bell },
+] as const;
 
-export const RnDSidebar = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { signOut, userRole } = useAuth();
+export type RnDSectionId = (typeof rndSections)[number]["id"];
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      toast.success("Logged out successfully");
-      navigate('/auth');
-    } catch (error) {
-      toast.error("Failed to logout");
-    }
-  };
+interface RnDSidebarProps {
+  activeTab: string;
+  onTabChange: (tab: RnDSectionId) => void;
+  unreadCount: number;
+}
 
+export const RnDSidebar = ({ activeTab, onTabChange, unreadCount }: RnDSidebarProps) => {
   return (
-    <aside className="w-64 min-h-screen bg-slate-900/80 backdrop-blur-xl border-r border-violet-500/20 flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-violet-500/20">
-        <div className="flex items-center gap-3">
-          <img 
-            src={softwareValaLogo} 
-            alt="Software Vala" 
-            className="h-10 w-auto object-contain"
-          />
-          <div>
-            <p className="text-xs text-violet-400">R&D Portal</p>
-          </div>
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-sidebar/80 backdrop-blur-xl lg:flex">
+      <div className="flex items-center gap-3 border-b border-border px-6 py-5">
+        <img src={logo} alt="Software Vala logo" width={40} height={40} className="h-10 w-10 object-contain" />
+        <div>
+          <p className="font-display text-sm font-semibold text-foreground">Software Vala</p>
+          <p className="text-xs text-brand">R&amp;D Department</p>
         </div>
       </div>
 
-      {/* Role Badge */}
-      <div className="px-4 pt-4">
-        <div className="px-3 py-1.5 rounded-lg bg-violet-500/20 border border-violet-500/30 text-center">
-          <span className="text-xs font-medium text-violet-300">
-            {userRole === 'super_admin' ? 'Super Admin' : 'R&D Manager'}
-          </span>
-        </div>
-      </div>
-
-      {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-1">
-        {menuItems.map((item, index) => {
+      <nav className="scroll-slim flex-1 space-y-1 overflow-y-auto p-4">
+        {rndSections.map((item, index) => {
           const Icon = item.icon;
-          const isActive = item.active || location.pathname === item.path;
-          
+          const isActive = activeTab === item.id;
           return (
             <motion.button
               key={item.id}
-              onClick={() => {
-                if (item.path && item.path !== "#") {
-                  navigate(item.path);
-                } else {
-                  toast.info(`${item.label} module`, { description: 'Navigating to module...' });
-                  navigate(`/${item.id}`);
-                }
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all ${
-                isActive 
-                  ? "bg-gradient-to-r from-violet-600/30 to-cyan-600/30 text-white border border-violet-500/50" 
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-              }`}
-              initial={{ opacity: 0, x: -20 }}
+              type="button"
+              onClick={() => onTabChange(item.id)}
+              initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ x: 5 }}
+              transition={{ delay: index * 0.03 }}
+              whileHover={{ x: 4 }}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-colors",
+                isActive
+                  ? "brand-soft border border-border text-foreground shadow-glow"
+                  : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+              )}
             >
-              <Icon className={`w-4 h-4 ${isActive ? "text-violet-400" : ""}`} />
+              <Icon className={cn("h-4 w-4", isActive && "text-brand")} />
               <span className="flex-1 text-left">{item.label}</span>
-              {item.badge && (
-                <span className="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-400 text-xs">
-                  {item.badge}
-                </span>
+              {item.id === "notifications" && unreadCount > 0 && (
+                <span className="rounded-full bg-brand/20 px-2 py-0.5 text-xs text-brand">{unreadCount}</span>
               )}
               {isActive && (
-                <motion.div
-                  className="w-1.5 h-1.5 rounded-full bg-violet-400"
-                  animate={{ scale: [1, 1.2, 1] }}
+                <motion.span
+                  className="h-1.5 w-1.5 rounded-full bg-brand"
+                  animate={{ scale: [1, 1.3, 1] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 />
               )}
@@ -118,57 +87,14 @@ export const RnDSidebar = () => {
         })}
       </nav>
 
-      {/* Footer with Actions */}
-      <div className="p-4 border-t border-violet-500/20 space-y-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full text-slate-400 hover:text-violet-300 hover:bg-violet-500/10"
-          onClick={() => navigate('/dashboard')}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
-        
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex-1 text-slate-400 hover:text-violet-300 hover:bg-violet-500/10"
-            onClick={() => navigate('/change-password')}
-          >
-            <Lock className="w-4 h-4 mr-2" />
-            Change Password
-          </Button>
-        </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full text-slate-400 hover:text-violet-300 hover:bg-violet-500/10"
-          onClick={() => navigate('/forgot-password')}
-        >
-          <KeyRound className="w-4 h-4 mr-2" />
-          Forgot Password
-        </Button>
-
-        <Button
-          onClick={handleLogout}
-          variant="ghost"
-          className="w-full text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20"
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
-        </Button>
-
-        {/* User Info */}
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800/50 mt-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-600 to-cyan-600 flex items-center justify-center text-white text-xs font-bold">
-            {userRole === 'super_admin' ? 'SA' : 'RM'}
-          </div>
-          <div className="flex-1">
-            <p className="text-sm text-white">{userRole === 'super_admin' ? 'Super Admin' : 'R&D Manager'}</p>
-            <p className="text-xs text-slate-500">R&D Portal</p>
+      <div className="border-t border-border p-4">
+        <div className="panel flex items-center gap-3 px-4 py-3">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand/20 text-xs font-bold text-brand">
+            RD
+          </span>
+          <div>
+            <p className="text-sm text-foreground">R&amp;D Workspace</p>
+            <p className="text-xs text-muted-foreground">Live data</p>
           </div>
         </div>
       </div>
