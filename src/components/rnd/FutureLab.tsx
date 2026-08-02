@@ -1,310 +1,294 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Lightbulb, 
-  Brain, 
-  Palette, 
-  Code, 
-  Users, 
-  Zap,
+import { motion } from "framer-motion";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import {
+  Lightbulb,
   Plus,
-  Star,
-  Link,
-  Clock,
-  User,
-  ArrowRight,
-  Sparkles
+  ThumbsUp,
+  Link2,
+  Sparkles,
+  Loader2,
+  CheckCircle2,
+  FlaskConical,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-
-interface FutureLabProps {
-  onSelectIdea: (id: string | null) => void;
-}
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useIdeas, useInvalidateRnD, rndKeys } from "@/hooks/useRnDData";
+import { useRnDAI } from "@/hooks/useRnDAI";
+import { createIdea, voteIdea, updateIdeaStatus } from "@/lib/rnd-data.functions";
+import { cn } from "@/lib/utils";
 
 const categories = [
-  { id: "ai", label: "AI", icon: Brain, color: "violet" },
-  { id: "uiux", label: "UI/UX", icon: Palette, color: "cyan" },
-  { id: "devtools", label: "Developer Tools", icon: Code, color: "emerald" },
-  { id: "client", label: "Client Experience", icon: Users, color: "amber" },
-  { id: "automation", label: "Automation", icon: Zap, color: "rose" },
+  { id: "all", label: "All Ideas" },
+  { id: "ai", label: "AI & ML" },
+  { id: "uiux", label: "UI/UX" },
+  { id: "devtools", label: "Dev Tools" },
+  { id: "client", label: "Client Experience" },
+  { id: "automation", label: "Automation" },
 ];
 
-const ideas = [
-  {
-    id: "1",
-    title: "AI-Powered Code Review Assistant",
+const priorityTone: Record<string, string> = {
+  critical: "border-danger/40 text-danger",
+  high: "border-warning/40 text-warning",
+  medium: "border-info/40 text-info",
+  low: "border-border text-muted-foreground",
+};
+
+const statusTone: Record<string, string> = {
+  approved: "border-success/40 text-success",
+  in_prototype: "border-brand-2/40 text-brand-2",
+  evaluating: "border-warning/40 text-warning",
+  rejected: "border-danger/40 text-danger",
+};
+
+export const FutureLab = ({ search }: { search: string }) => {
+  const { data: ideas, isLoading } = useIdeas();
+  const invalidate = useInvalidateRnD();
+  const { evaluateIdea, isLoading: aiLoading } = useRnDAI();
+
+  const submitIdea = useServerFn(createIdea);
+  const vote = useServerFn(voteIdea);
+  const setStatus = useServerFn(updateIdeaStatus);
+
+  const [filter, setFilter] = useState("all");
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
     category: "ai",
-    priority: "high",
-    feasibility: 87,
-    author: "vala(rnd)2341",
-    created: "2 hours ago",
-    votes: 24,
-    status: "evaluating",
-    description: "Automated code review with AI suggestions for optimization and security.",
-    researchLinks: 3,
-  },
-  {
-    id: "2",
-    title: "Holographic Dashboard Widgets",
-    category: "uiux",
     priority: "medium",
-    feasibility: 72,
-    author: "vala(design)8892",
-    created: "5 hours ago",
-    votes: 18,
-    status: "approved",
-    description: "3D holographic-style widgets with depth perception and parallax effects.",
-    researchLinks: 5,
-  },
-  {
-    id: "3",
-    title: "One-Click Deployment Pipeline",
-    category: "devtools",
-    priority: "high",
-    feasibility: 94,
-    author: "vala(dev)4412",
-    created: "1 day ago",
-    votes: 31,
-    status: "in_prototype",
-    description: "Simplified deployment with automated testing, staging, and production rollout.",
-    researchLinks: 2,
-  },
-  {
-    id: "4",
-    title: "Predictive Client Needs Engine",
-    category: "client",
-    priority: "medium",
-    feasibility: 68,
-    author: "vala(cs)7723",
-    created: "3 days ago",
-    votes: 15,
-    status: "evaluating",
-    description: "AI predicts client needs before they ask, enabling proactive support.",
-    researchLinks: 4,
-  },
-  {
-    id: "5",
-    title: "Auto-Scaling Task Automation",
-    category: "automation",
-    priority: "critical",
-    feasibility: 81,
-    author: "vala(rnd)2341",
-    created: "4 hours ago",
-    votes: 27,
-    status: "approved",
-    description: "Intelligent task distribution that scales based on team capacity.",
-    researchLinks: 6,
-  },
-];
+    author: "vala(rnd)0000",
+  });
+  const [evaluation, setEvaluation] = useState<{ id: string; text: string } | null>(null);
 
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case "critical": return "bg-red-500/20 text-red-400 border-red-500/50";
-    case "high": return "bg-orange-500/20 text-orange-400 border-orange-500/50";
-    case "medium": return "bg-amber-500/20 text-amber-400 border-amber-500/50";
-    case "low": return "bg-slate-500/20 text-slate-400 border-slate-500/50";
-    default: return "bg-slate-500/20 text-slate-400 border-slate-500/50";
-  }
-};
+  const visible = (ideas ?? []).filter((idea) => {
+    const matchesCategory = filter === "all" || idea.category === filter;
+    const term = search.trim().toLowerCase();
+    const matchesSearch =
+      !term || idea.title.toLowerCase().includes(term) || idea.description.toLowerCase().includes(term);
+    return matchesCategory && matchesSearch;
+  });
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "approved": return "bg-emerald-500/20 text-emerald-400";
-    case "in_prototype": return "bg-cyan-500/20 text-cyan-400";
-    case "evaluating": return "bg-violet-500/20 text-violet-400";
-    case "rejected": return "bg-red-500/20 text-red-400";
-    default: return "bg-slate-500/20 text-slate-400";
-  }
-};
+  const handleSubmit = async () => {
+    if (form.title.trim().length < 3 || form.description.trim().length < 5) {
+      toast.error("Add a title and a short description first");
+      return;
+    }
+    setSaving(true);
+    try {
+      await submitIdea({
+        data: {
+          title: form.title.trim(),
+          description: form.description.trim(),
+          category: form.category as "ai",
+          priority: form.priority as "medium",
+          author: form.author.trim() || "vala(rnd)0000",
+          feasibility: 0,
+        },
+      });
+      toast.success("Idea submitted to Future Lab");
+      setForm({ title: "", description: "", category: "ai", priority: "medium", author: form.author });
+      setOpen(false);
+      await invalidate(rndKeys.ideas);
+      await invalidate(rndKeys.notifications);
+    } catch (error) {
+      toast.error("Could not submit idea", {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
-const getCategoryColor = (category: string) => {
-  const cat = categories.find(c => c.id === category);
-  switch (cat?.color) {
-    case "violet": return "from-violet-600 to-violet-400";
-    case "cyan": return "from-cyan-600 to-cyan-400";
-    case "emerald": return "from-emerald-600 to-emerald-400";
-    case "amber": return "from-amber-600 to-amber-400";
-    case "rose": return "from-rose-600 to-rose-400";
-    default: return "from-slate-600 to-slate-400";
-  }
-};
+  const handleVote = async (id: string) => {
+    try {
+      await vote({ data: { id, delta: 1 } });
+      await invalidate(rndKeys.ideas);
+    } catch (error) {
+      toast.error("Vote failed", { description: error instanceof Error ? error.message : undefined });
+    }
+  };
 
-export const FutureLab = ({ onSelectIdea }: FutureLabProps) => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [hoveredIdea, setHoveredIdea] = useState<string | null>(null);
+  const handleStatus = async (id: string, status: "approved" | "in_prototype" | "rejected") => {
+    try {
+      await setStatus({ data: { id, status } });
+      toast.success(`Idea marked ${status.replace("_", " ")}`);
+      await invalidate(rndKeys.ideas);
+    } catch (error) {
+      toast.error("Update failed", { description: error instanceof Error ? error.message : undefined });
+    }
+  };
 
-  const filteredIdeas = selectedCategory 
-    ? ideas.filter(idea => idea.category === selectedCategory)
-    : ideas;
+  const handleEvaluate = async (id: string, title: string, description: string, category: string, author: string) => {
+    const result = await evaluateIdea(title, description, category, author);
+    if (result) setEvaluation({ id, text: result });
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
-            Future Lab – Idea Sandbox
-          </h2>
-          <p className="text-slate-400 text-sm mt-1">Create and evaluate innovative ideas for SOFTWARE VALA</p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="brand-soft rounded-2xl border border-border p-3">
+            <Lightbulb className="h-6 w-6 text-brand" />
+          </span>
+          <div>
+            <h2 className="brand-gradient-text font-display text-2xl font-bold">Future Lab</h2>
+            <p className="text-sm text-muted-foreground">Idea intake, scoring and promotion pipeline</p>
+          </div>
         </div>
-        <Button className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 gap-2">
-          <Plus className="w-4 h-4" />
-          New Idea
+        <Button onClick={() => setOpen((value) => !value)}>
+          <Plus className="mr-2 h-4 w-4" /> New Idea
         </Button>
       </div>
 
-      {/* Category Filter */}
-      <div className="flex items-center gap-3">
-        <motion.button
-          onClick={() => setSelectedCategory(null)}
-          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-            !selectedCategory 
-              ? "bg-gradient-to-r from-violet-600/30 to-cyan-600/30 text-white border border-violet-500/50" 
-              : "bg-slate-800/50 text-slate-400 hover:text-slate-200 border border-slate-700/50"
-          }`}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          All Ideas
-        </motion.button>
-        {categories.map((cat) => {
-          const Icon = cat.icon;
-          return (
-            <motion.button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                selectedCategory === cat.id 
-                  ? `bg-gradient-to-r ${getCategoryColor(cat.id)} text-white` 
-                  : "bg-slate-800/50 text-slate-400 hover:text-slate-200 border border-slate-700/50"
-              }`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+      {open && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="panel space-y-4 p-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Input
+                placeholder="Idea title"
+                value={form.title}
+                onChange={(event) => setForm({ ...form, title: event.target.value })}
+              />
+              <Input
+                placeholder="Author code (e.g. vala(rnd)2341)"
+                value={form.author}
+                onChange={(event) => setForm({ ...form, author: event.target.value })}
+              />
+            </div>
+            <Textarea
+              placeholder="Describe the idea, the problem it solves and the expected outcome"
+              rows={4}
+              value={form.description}
+              onChange={(event) => setForm({ ...form, description: event.target.value })}
+            />
+            <div className="grid gap-4 md:grid-cols-2">
+              <Select value={form.category} onValueChange={(value) => setForm({ ...form, category: value })}>
+                <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+                <SelectContent>
+                  {categories.slice(1).map((category) => (
+                    <SelectItem key={category.id} value={category.id}>{category.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={form.priority} onValueChange={(value) => setForm({ ...form, priority: value })}>
+                <SelectTrigger><SelectValue placeholder="Priority" /></SelectTrigger>
+                <SelectContent>
+                  {["low", "medium", "high", "critical"].map((priority) => (
+                    <SelectItem key={priority} value={priority}>{priority}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button onClick={handleSubmit} disabled={saving}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit idea
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {categories.map((category) => (
+          <button
+            key={category.id}
+            type="button"
+            onClick={() => setFilter(category.id)}
+            className={cn(
+              "rounded-lg border px-3 py-1.5 text-sm transition-colors",
+              filter === category.id
+                ? "border-border brand-soft text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {category.label}
+          </button>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {[0, 1, 2, 3].map((key) => <Skeleton key={key} className="h-48 w-full rounded-xl" />)}
+        </div>
+      ) : visible.length === 0 ? (
+        <Card className="panel p-10 text-center text-muted-foreground">No ideas match this filter yet.</Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {visible.map((idea, index) => (
+            <motion.div
+              key={idea.id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.04 }}
             >
-              <Icon className="w-4 h-4" />
-              {cat.label}
-            </motion.button>
-          );
-        })}
-      </div>
+              <Card className="panel flex h-full flex-col gap-4 p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="font-display text-lg font-semibold text-foreground">{idea.title}</h3>
+                  <Badge variant="outline" className={priorityTone[idea.priority] ?? ""}>{idea.priority}</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">{idea.description}</p>
 
-      {/* Ideas Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <AnimatePresence mode="popLayout">
-          {filteredIdeas.map((idea, index) => {
-            const CategoryIcon = categories.find(c => c.id === idea.category)?.icon || Lightbulb;
-            
-            return (
-              <motion.div
-                key={idea.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: index * 0.05 }}
-                onMouseEnter={() => setHoveredIdea(idea.id)}
-                onMouseLeave={() => setHoveredIdea(null)}
-              >
-                <Card className={`relative p-5 bg-slate-900/50 backdrop-blur-xl border-slate-700/50 hover:border-violet-500/50 transition-all cursor-pointer group overflow-hidden ${
-                  hoveredIdea === idea.id ? "shadow-lg shadow-violet-500/20" : ""
-                }`}>
-                  {/* Glow effect for high priority */}
-                  {(idea.priority === "critical" || idea.priority === "high") && (
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-violet-600/5 to-cyan-600/5"
-                      animate={{ opacity: [0.3, 0.6, 0.3] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  )}
-
-                  <div className="relative z-10">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className={`p-2 rounded-lg bg-gradient-to-r ${getCategoryColor(idea.category)}`}>
-                        <CategoryIcon className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={getPriorityColor(idea.priority)}>
-                          {idea.priority}
-                        </Badge>
-                        <Badge className={getStatusColor(idea.status)}>
-                          {idea.status.replace("_", " ")}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Title & Description */}
-                    <h3 className="font-semibold text-white mb-2 group-hover:text-violet-300 transition-colors">
-                      {idea.title}
-                    </h3>
-                    <p className="text-sm text-slate-400 mb-4 line-clamp-2">
-                      {idea.description}
-                    </p>
-
-                    {/* AI Feasibility Score */}
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-slate-400 flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-violet-400" />
-                          AI Feasibility Score
-                        </span>
-                        <span className={`font-semibold ${
-                          idea.feasibility >= 80 ? "text-emerald-400" : 
-                          idea.feasibility >= 60 ? "text-amber-400" : "text-red-400"
-                        }`}>
-                          {idea.feasibility}%
-                        </span>
-                      </div>
-                      <Progress 
-                        value={idea.feasibility} 
-                        className="h-1.5 bg-slate-700"
-                      />
-                    </div>
-
-                    {/* Meta Info */}
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          {idea.author}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {idea.created}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1">
-                          <Star className="w-3 h-3 text-amber-400" />
-                          {idea.votes}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Link className="w-3 h-3" />
-                          {idea.researchLinks}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Hover Action */}
-                    <motion.div
-                      className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-violet-600/20 to-transparent flex items-end justify-center pb-2"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: hoveredIdea === idea.id ? 1 : 0, y: hoveredIdea === idea.id ? 0 : 10 }}
-                    >
-                      <span className="text-xs text-violet-300 flex items-center gap-1">
-                        View Details <ArrowRight className="w-3 h-3" />
-                      </span>
-                    </motion.div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Feasibility</span>
+                    <span>{idea.feasibility}%</span>
                   </div>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
-      </div>
+                  <Progress value={idea.feasibility} />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  <span>{idea.author}</span>
+                  <span className="flex items-center gap-1"><Link2 className="h-3 w-3" /> {idea.research_links} sources</span>
+                  <Badge variant="outline" className={statusTone[idea.status] ?? ""}>{idea.status.replace("_", " ")}</Badge>
+                </div>
+
+                <div className="mt-auto flex flex-wrap gap-2">
+                  <Button size="sm" variant="secondary" onClick={() => handleVote(idea.id)}>
+                    <ThumbsUp className="mr-2 h-3.5 w-3.5" /> {idea.votes}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={aiLoading}
+                    onClick={() => handleEvaluate(idea.id, idea.title, idea.description, idea.category, idea.author)}
+                  >
+                    {aiLoading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Sparkles className="mr-2 h-3.5 w-3.5" />}
+                    AI evaluate
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleStatus(idea.id, "approved")}>
+                    <CheckCircle2 className="mr-2 h-3.5 w-3.5" /> Approve
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleStatus(idea.id, "in_prototype")}>
+                    <FlaskConical className="mr-2 h-3.5 w-3.5" /> Prototype
+                  </Button>
+                </div>
+
+                {evaluation?.id === idea.id && (
+                  <div className="scroll-slim max-h-64 overflow-y-auto rounded-lg border border-border bg-surface-2 p-4 text-sm whitespace-pre-wrap text-foreground">
+                    {evaluation.text}
+                  </div>
+                )}
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
