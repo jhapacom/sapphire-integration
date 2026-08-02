@@ -100,7 +100,13 @@ export const updatePrototypeProgress = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const db = await admin();
     const { id, ...patch } = data;
-    const { error } = await db.from("rnd_prototypes").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+    const update: Record<string, string | number> = {
+      progress: patch.progress,
+      updated_at: new Date().toISOString(),
+    };
+    if (patch.completed_hours !== undefined) update['completed_hours'] = patch.completed_hours;
+    if (patch.status !== undefined) update['status'] = patch.status;
+    const { error } = await db.from("rnd_prototypes").update(update).eq("id", id);
     fail("Could not update prototype", error);
     return { ok: true };
   });
@@ -195,7 +201,13 @@ export const voteDecision = createServerFn({ method: "POST" })
     fail("Decision not found", readError);
     const column = data.vote === "approve" ? "votes_approve" : data.vote === "reject" ? "votes_reject" : "votes_hold";
     const next = ((current as Record<string, number> | null)?.[column] ?? 0) + 1;
-    const { error } = await db.from("rnd_decisions").update({ [column]: next }).eq("id", data.id);
+    const update =
+      data.vote === "approve"
+        ? { votes_approve: next }
+        : data.vote === "reject"
+          ? { votes_reject: next }
+          : { votes_hold: next };
+    const { error } = await db.from("rnd_decisions").update(update).eq("id", data.id);
     fail("Could not register vote", error);
     return { ok: true };
   });
@@ -297,7 +309,11 @@ export const savePipelineItem = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const db = await admin();
-    const { data: row, error } = await db.from("rnd_pipeline_items").insert(data).select().single();
+    const { data: row, error } = await db
+      .from("rnd_pipeline_items")
+      .insert({ ...data, due_date: data.due_date ?? null })
+      .select()
+      .single();
     fail("Could not add pipeline item", error);
     return row;
   });
