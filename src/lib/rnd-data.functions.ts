@@ -100,13 +100,15 @@ export const updatePrototypeProgress = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const db = await admin();
     const { id, ...patch } = data;
-    const update: Record<string, string | number> = {
-      progress: patch.progress,
-      updated_at: new Date().toISOString(),
-    };
-    if (patch.completed_hours !== undefined) update['completed_hours'] = patch.completed_hours;
-    if (patch.status !== undefined) update['status'] = patch.status;
-    const { error } = await db.from("rnd_prototypes").update(update).eq("id", id);
+    const { error } = await db
+      .from("rnd_prototypes")
+      .update({
+        progress: patch.progress,
+        updated_at: new Date().toISOString(),
+        ...(patch.completed_hours !== undefined ? { completed_hours: patch.completed_hours } : {}),
+        ...(patch.status !== undefined ? { status: patch.status } : {}),
+      })
+      .eq("id", id);
     fail("Could not update prototype", error);
     return { ok: true };
   });
