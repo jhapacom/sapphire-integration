@@ -1,166 +1,100 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  Brain, 
-  TrendingUp, 
-  Lightbulb, 
-  Blocks, 
-  TestTube, 
-  Map, 
-  Search,
-  Sparkles,
-  Activity,
-  Zap,
-  Bot,
-  Target,
-  Radar,
-  Rocket
-} from "lucide-react";
+import { Brain, Search, Activity, Sparkles, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { rndSections, type RnDSectionId } from "./RnDSidebar";
+import { cn } from "@/lib/utils";
 
 interface RnDTopBarProps {
   activeTab: string;
-  onTabChange: (tab: string) => void;
+  onTabChange: (tab: RnDSectionId) => void;
+  search: string;
+  onSearchChange: (value: string) => void;
+  stats: { ideas: number; prototypes: number; trends: number; decisions: number };
 }
 
-export const RnDTopBar = ({ activeTab, onTabChange }: RnDTopBarProps) => {
-  const [isAIActive, setIsAIActive] = useState(true);
+export const RnDTopBar = ({ activeTab, onTabChange, search, onSearchChange, stats }: RnDTopBarProps) => {
+  const quickTabs = rndSections.filter((section) =>
+    ["future-lab", "ai-assistant", "idea-scorer", "tech-radar", "pipeline", "prototype", "trends", "decisions"].includes(
+      section.id,
+    ),
+  );
 
-  const tabs = [
-    { id: "future-lab", label: "Future Lab", icon: Lightbulb, count: 24 },
-    { id: "ai-assistant", label: "AI Assistant", icon: Bot, count: 0, isAI: true },
-    { id: "idea-scorer", label: "Idea Scorer", icon: Target, count: 0, isAI: true },
-    { id: "tech-radar", label: "Tech Radar", icon: Radar, count: 0, isAI: true },
-    { id: "pipeline", label: "Pipeline", icon: Rocket, count: 5 },
-    { id: "prototype", label: "Prototype", icon: Blocks, count: 8 },
-    { id: "trends", label: "Trends", icon: TrendingUp, count: 5 },
-    { id: "decisions", label: "Decisions", icon: Map, count: 6 },
-  ];
+  const counts: Record<string, number> = {
+    "future-lab": stats.ideas,
+    prototype: stats.prototypes,
+    trends: stats.trends,
+    decisions: stats.decisions,
+  };
 
   return (
-    <div className="border-b border-violet-500/20 bg-slate-900/50 backdrop-blur-xl">
-      {/* Main Top Bar */}
-      <div className="px-6 py-4 flex items-center justify-between">
-        {/* AI Research Panel Indicator */}
-        <div className="flex items-center gap-4">
-          <motion.div 
-            className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600/20 to-cyan-600/20 border border-violet-500/30"
-            animate={{ boxShadow: isAIActive ? "0 0 20px rgba(139, 92, 246, 0.3)" : "none" }}
-          >
-            <motion.div
-              animate={{ 
-                scale: [1, 1.1, 1],
-                rotate: [0, 5, -5, 0]
-              }}
-              transition={{ duration: 3, repeat: Infinity }}
-            >
-              <Brain className="w-6 h-6 text-violet-400" />
-            </motion.div>
-            <div>
-              <p className="text-xs text-violet-300/70">AI Research Panel</p>
-              <p className="text-sm font-semibold text-violet-100">Active & Learning</p>
-            </div>
-            <motion.div
-              className="w-2 h-2 rounded-full bg-emerald-400"
-              animate={{ opacity: [1, 0.5, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            />
-          </motion.div>
-
-          {/* Stats */}
-          <div className="flex items-center gap-6">
-            <div className="text-center">
-              <p className="text-2xl font-bold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">156</p>
-              <p className="text-xs text-slate-400">Ideas in Pipeline</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">23</p>
-              <p className="text-xs text-slate-400">Active Prototypes</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">7</p>
-              <p className="text-xs text-slate-400">Pending Decisions</p>
-            </div>
+    <header className="border-b border-border bg-surface/70 backdrop-blur-xl">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4">
+        <motion.div
+          className="brand-soft flex items-center gap-3 rounded-xl border border-border px-4 py-2"
+          animate={{ boxShadow: ["0 0 0 rgba(0,0,0,0)", "var(--shadow-glow)", "0 0 0 rgba(0,0,0,0)"] }}
+          transition={{ duration: 4, repeat: Infinity }}
+        >
+          <motion.span animate={{ rotate: [0, 6, -6, 0] }} transition={{ duration: 4, repeat: Infinity }}>
+            <Brain className="h-6 w-6 text-brand" />
+          </motion.span>
+          <div>
+            <p className="text-xs text-muted-foreground">AI Research Panel</p>
+            <p className="font-display text-sm font-semibold text-foreground">Active &amp; Learning</p>
           </div>
+          <motion.span
+            className="h-2 w-2 rounded-full bg-success"
+            animate={{ opacity: [1, 0.4, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          />
+        </motion.div>
+
+        <div className="relative min-w-[240px] flex-1 max-w-md">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Search ideas, trends, prototypes…"
+            className="pl-9"
+            aria-label="Search R&D records"
+          />
         </div>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input 
-              placeholder="Search ideas, prototypes..."
-              className="pl-10 w-64 bg-slate-800/50 border-violet-500/30 focus:border-violet-400 text-slate-200"
-            />
-          </div>
-
-          <Button 
-            className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white gap-2"
-          >
-            <Sparkles className="w-4 h-4" />
-            AI Analysis
-          </Button>
-
-          <motion.div
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30"
-            animate={{ borderColor: ["rgba(16, 185, 129, 0.3)", "rgba(16, 185, 129, 0.6)", "rgba(16, 185, 129, 0.3)"] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <Zap className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm text-emerald-300">3 New Trends</span>
-          </motion.div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="gap-1 border-info/40 text-info">
+            <Activity className="h-3 w-3" /> {stats.prototypes} live prototypes
+          </Badge>
+          <Badge variant="outline" className="gap-1 border-success/40 text-success">
+            <Zap className="h-3 w-3" /> Neural engine
+          </Badge>
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="px-6 flex items-center gap-2 pb-3">
-        {tabs.map((tab) => {
+      <div className="scroll-slim flex gap-1 overflow-x-auto px-4 pb-3">
+        {quickTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          
+          const count = counts[tab.id];
           return (
-            <motion.button
+            <button
               key={tab.id}
+              type="button"
               onClick={() => onTabChange(tab.id)}
-              className={`relative flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                isActive 
-                  ? "bg-gradient-to-r from-violet-600/30 to-cyan-600/30 text-white border border-violet-500/50" 
-                  : tab.isAI
-                  ? "text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 border border-violet-500/20"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-              }`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              className={cn(
+                "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors",
+                isActive ? "brand-soft border border-border text-foreground" : "text-muted-foreground hover:text-foreground",
+              )}
             >
-              <Icon className={`w-4 h-4 ${tab.isAI ? "text-violet-400" : ""}`} />
-              <span className="text-sm font-medium">{tab.label}</span>
-              {tab.isAI && (
-                <motion.div
-                  className="w-1.5 h-1.5 rounded-full bg-violet-400"
-                  animate={{ opacity: [1, 0.4, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                />
+              <Icon className={cn("h-4 w-4", isActive && "text-brand")} />
+              {tab.label}
+              {count ? <span className="rounded-full bg-muted px-1.5 text-xs">{count}</span> : null}
+              {["ai-assistant", "idea-scorer", "tech-radar"].includes(tab.id) && (
+                <Sparkles className="h-3 w-3 text-brand-2" />
               )}
-              {tab.count > 0 && (
-                <Badge 
-                  variant="secondary" 
-                  className={`text-xs ${isActive ? "bg-violet-500/30 text-violet-200" : "bg-slate-700 text-slate-300"}`}
-                >
-                  {tab.count}
-                </Badge>
-              )}
-              {isActive && (
-                <motion.div
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 to-cyan-500"
-                  layoutId="activeTab"
-                />
-              )}
-            </motion.button>
+            </button>
           );
         })}
       </div>
-    </div>
+    </header>
   );
 };
