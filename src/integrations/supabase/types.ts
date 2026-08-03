@@ -14,6 +14,863 @@ export type Database = {
   }
   public: {
     Tables: {
+      pm_ai_conversations: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          language: string
+          resolution: string
+          status: string
+          topic: string
+          updated_at: string
+          user_code: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          language?: string
+          resolution?: string
+          status?: string
+          topic?: string
+          updated_at?: string
+          user_code: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          language?: string
+          resolution?: string
+          status?: string
+          topic?: string
+          updated_at?: string
+          user_code?: string
+        }
+        Relationships: []
+      }
+      pm_ai_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pm_ai_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "pm_ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pm_alerts: {
+        Row: {
+          acknowledged: boolean
+          code: string
+          created_at: string
+          id: string
+          message: string
+          severity: string
+          type: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          message?: string
+          severity?: string
+          type?: string
+        }
+        Update: {
+          acknowledged?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          message?: string
+          severity?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      pm_assist_sessions: {
+        Row: {
+          code: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          mode: string
+          status: string
+          updated_at: string
+          user_code: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          mode?: string
+          status?: string
+          updated_at?: string
+          user_code: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          mode?: string
+          status?: string
+          updated_at?: string
+          user_code?: string
+        }
+        Relationships: []
+      }
+      pm_audit_logs: {
+        Row: {
+          action: string
+          actor: string
+          category: string
+          created_at: string
+          details: string
+          id: string
+          ip: string
+          status: string
+          target: string
+        }
+        Insert: {
+          action: string
+          actor?: string
+          category?: string
+          created_at?: string
+          details?: string
+          id?: string
+          ip?: string
+          status?: string
+          target?: string
+        }
+        Update: {
+          action?: string
+          actor?: string
+          category?: string
+          created_at?: string
+          details?: string
+          id?: string
+          ip?: string
+          status?: string
+          target?: string
+        }
+        Relationships: []
+      }
+      pm_communication_logs: {
+        Row: {
+          code: string
+          content: string
+          created_at: string
+          id: string
+          type: string
+          user_code: string
+        }
+        Insert: {
+          code: string
+          content?: string
+          created_at?: string
+          id?: string
+          type?: string
+          user_code?: string
+        }
+        Update: {
+          code?: string
+          content?: string
+          created_at?: string
+          id?: string
+          type?: string
+          user_code?: string
+        }
+        Relationships: []
+      }
+      pm_compliance: {
+        Row: {
+          agreement_accepted: boolean
+          created_at: string
+          id: string
+          legal_flag: boolean
+          updated_at: string
+          user_code: string
+          violations: number
+        }
+        Insert: {
+          agreement_accepted?: boolean
+          created_at?: string
+          id?: string
+          legal_flag?: boolean
+          updated_at?: string
+          user_code: string
+          violations?: number
+        }
+        Update: {
+          agreement_accepted?: boolean
+          created_at?: string
+          id?: string
+          legal_flag?: boolean
+          updated_at?: string
+          user_code?: string
+          violations?: number
+        }
+        Relationships: []
+      }
+      pm_decisions: {
+        Row: {
+          amount: number | null
+          code: string
+          decision_note: string
+          description: string
+          id: string
+          is_financial: boolean
+          priority: string
+          requested_at: string
+          requested_by: string
+          status: string
+          subject: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          code: string
+          decision_note?: string
+          description?: string
+          id?: string
+          is_financial?: boolean
+          priority?: string
+          requested_at?: string
+          requested_by?: string
+          status?: string
+          subject: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          code?: string
+          decision_note?: string
+          description?: string
+          id?: string
+          is_financial?: boolean
+          priority?: string
+          requested_at?: string
+          requested_by?: string
+          status?: string
+          subject?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pm_escalations: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          decision_note: string
+          description: string
+          evidence: string[]
+          id: string
+          priority: string
+          source: string
+          source_id: string
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string
+          decision_note?: string
+          description?: string
+          evidence?: string[]
+          id?: string
+          priority?: string
+          source?: string
+          source_id?: string
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          decision_note?: string
+          description?: string
+          evidence?: string[]
+          id?: string
+          priority?: string
+          source?: string
+          source_id?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pm_health_metrics: {
+        Row: {
+          code: string
+          description: string
+          id: string
+          name: string
+          status: string
+          trend: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          code: string
+          description?: string
+          id?: string
+          name: string
+          status?: string
+          trend?: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          code?: string
+          description?: string
+          id?: string
+          name?: string
+          status?: string
+          trend?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      pm_issues: {
+        Row: {
+          ai_attempts: number
+          build: string
+          code: string
+          created_at: string
+          id: string
+          last_attempt_at: string | null
+          status: string
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          ai_attempts?: number
+          build?: string
+          code: string
+          created_at?: string
+          id?: string
+          last_attempt_at?: string | null
+          status?: string
+          summary?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_attempts?: number
+          build?: string
+          code?: string
+          created_at?: string
+          id?: string
+          last_attempt_at?: string | null
+          status?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pm_licenses: {
+        Row: {
+          created_at: string
+          domain: string
+          domain_status: string
+          expiry: string
+          id: string
+          license_type: string
+          transfer_status: string
+          updated_at: string
+          user_code: string
+        }
+        Insert: {
+          created_at?: string
+          domain?: string
+          domain_status?: string
+          expiry?: string
+          id?: string
+          license_type?: string
+          transfer_status?: string
+          updated_at?: string
+          user_code: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          domain_status?: string
+          expiry?: string
+          id?: string
+          license_type?: string
+          transfer_status?: string
+          updated_at?: string
+          user_code?: string
+        }
+        Relationships: []
+      }
+      pm_manager_metrics: {
+        Row: {
+          avg_resolution_time: string
+          escalations_handled: number
+          escalations_pending: number
+          id: string
+          manager_code: string
+          role: string
+          sla_compliance: number
+          status: string
+          trend: string
+          updated_at: string
+        }
+        Insert: {
+          avg_resolution_time?: string
+          escalations_handled?: number
+          escalations_pending?: number
+          id?: string
+          manager_code: string
+          role?: string
+          sla_compliance?: number
+          status?: string
+          trend?: string
+          updated_at?: string
+        }
+        Update: {
+          avg_resolution_time?: string
+          escalations_handled?: number
+          escalations_pending?: number
+          id?: string
+          manager_code?: string
+          role?: string
+          sla_compliance?: number
+          status?: string
+          trend?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pm_products: {
+        Row: {
+          created_at: string
+          custom_changes: string
+          id: string
+          modules: string[]
+          product: string
+          updated_at: string
+          user_code: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          custom_changes?: string
+          id?: string
+          modules?: string[]
+          product: string
+          updated_at?: string
+          user_code: string
+          version?: string
+        }
+        Update: {
+          created_at?: string
+          custom_changes?: string
+          id?: string
+          modules?: string[]
+          product?: string
+          updated_at?: string
+          user_code?: string
+          version?: string
+        }
+        Relationships: []
+      }
+      pm_promises: {
+        Row: {
+          action: string
+          code: string
+          created_at: string
+          deadline: string
+          developer_code: string
+          id: string
+          owner: string
+          priority: string
+          status: string
+          task_code: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          code: string
+          created_at?: string
+          deadline?: string
+          developer_code?: string
+          id?: string
+          owner?: string
+          priority?: string
+          status?: string
+          task_code?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          code?: string
+          created_at?: string
+          deadline?: string
+          developer_code?: string
+          id?: string
+          owner?: string
+          priority?: string
+          status?: string
+          task_code?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pm_quality_alerts: {
+        Row: {
+          acknowledged: boolean
+          affected_entity: string
+          code: string
+          confidence: number
+          description: string
+          detected_at: string
+          entity_type: string
+          id: string
+          pattern: string
+          reasoning: string
+          severity: string
+          suggested_action: string
+          updated_at: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          affected_entity?: string
+          code: string
+          confidence?: number
+          description?: string
+          detected_at?: string
+          entity_type?: string
+          id?: string
+          pattern: string
+          reasoning?: string
+          severity?: string
+          suggested_action?: string
+          updated_at?: string
+        }
+        Update: {
+          acknowledged?: boolean
+          affected_entity?: string
+          code?: string
+          confidence?: number
+          description?: string
+          detected_at?: string
+          entity_type?: string
+          id?: string
+          pattern?: string
+          reasoning?: string
+          severity?: string
+          suggested_action?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pm_renewals: {
+        Row: {
+          code: string
+          created_at: string
+          expiry: string
+          grace: string
+          id: string
+          product: string
+          status: string
+          updated_at: string
+          user_code: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expiry?: string
+          grace?: string
+          id?: string
+          product?: string
+          status?: string
+          updated_at?: string
+          user_code: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expiry?: string
+          grace?: string
+          id?: string
+          product?: string
+          status?: string
+          updated_at?: string
+          user_code?: string
+        }
+        Relationships: []
+      }
+      pm_reports: {
+        Row: {
+          code: string
+          generated_at: string
+          id: string
+          name: string
+          size: string
+          type: string
+        }
+        Insert: {
+          code: string
+          generated_at?: string
+          id?: string
+          name: string
+          size?: string
+          type?: string
+        }
+        Update: {
+          code?: string
+          generated_at?: string
+          id?: string
+          name?: string
+          size?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      pm_satisfaction: {
+        Row: {
+          ai_prediction: string
+          created_at: string
+          csat: number
+          feedback: string
+          id: string
+          risk: string
+          updated_at: string
+          user_code: string
+        }
+        Insert: {
+          ai_prediction?: string
+          created_at?: string
+          csat?: number
+          feedback?: string
+          id?: string
+          risk?: string
+          updated_at?: string
+          user_code: string
+        }
+        Update: {
+          ai_prediction?: string
+          created_at?: string
+          csat?: number
+          feedback?: string
+          id?: string
+          risk?: string
+          updated_at?: string
+          user_code?: string
+        }
+        Relationships: []
+      }
+      pm_settings: {
+        Row: {
+          enabled: boolean
+          id: string
+          key: string
+          label: string
+          locked: boolean
+          section: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: string
+          key: string
+          label: string
+          locked?: boolean
+          section?: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: string
+          key?: string
+          label?: string
+          locked?: boolean
+          section?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pm_tickets: {
+        Row: {
+          code: string
+          id: string
+          opened_at: string
+          product: string
+          severity: string
+          status: string
+          subject: string
+          type: string
+          updated_at: string
+          user_code: string
+        }
+        Insert: {
+          code: string
+          id?: string
+          opened_at?: string
+          product?: string
+          severity?: string
+          status?: string
+          subject?: string
+          type?: string
+          updated_at?: string
+          user_code?: string
+        }
+        Update: {
+          code?: string
+          id?: string
+          opened_at?: string
+          product?: string
+          severity?: string
+          status?: string
+          subject?: string
+          type?: string
+          updated_at?: string
+          user_code?: string
+        }
+        Relationships: []
+      }
+      pm_upgrades: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          item: string
+          status: string
+          type: string
+          updated_at: string
+          user_code: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          item?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          user_code: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          item?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          user_code?: string
+        }
+        Relationships: []
+      }
+      pm_usage: {
+        Row: {
+          ai_calls_pct: number
+          api_pct: number
+          created_at: string
+          fair_usage_alert: boolean
+          id: string
+          storage_pct: number
+          updated_at: string
+          user_code: string
+        }
+        Insert: {
+          ai_calls_pct?: number
+          api_pct?: number
+          created_at?: string
+          fair_usage_alert?: boolean
+          id?: string
+          storage_pct?: number
+          updated_at?: string
+          user_code: string
+        }
+        Update: {
+          ai_calls_pct?: number
+          api_pct?: number
+          created_at?: string
+          fair_usage_alert?: boolean
+          id?: string
+          storage_pct?: number
+          updated_at?: string
+          user_code?: string
+        }
+        Relationships: []
+      }
+      pm_users: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          license: string
+          product: string
+          region: string
+          status: string
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          license?: string
+          product: string
+          region?: string
+          status?: string
+          tier?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          license?: string
+          product?: string
+          region?: string
+          status?: string
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rnd_ai_messages: {
         Row: {
           content: string
