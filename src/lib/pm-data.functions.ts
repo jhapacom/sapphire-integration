@@ -148,10 +148,10 @@ export const updateIssue = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const db = await admin();
-    const patch: Record<string, unknown> = { status: data.status };
+    const patch: { status: string; ai_attempts?: number; last_attempt_at?: string } = { status: data.status };
     if (data.registerAiAttempt) {
-      patch['ai_attempts'] = data.currentAttempts + 1;
-      patch['last_attempt_at'] = new Date().toISOString();
+      patch.ai_attempts = data.currentAttempts + 1;
+      patch.last_attempt_at = new Date().toISOString();
     }
     const { error } = await db.from("pm_issues").update(patch).eq("id", data.id);
     fail("Could not update the issue", error);
@@ -207,8 +207,8 @@ export const updatePromise = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const db = await admin();
-    const patch: Record<string, unknown> = {};
-    if (data.status) patch['status'] = data.status;
+    const patch: { status?: string; deadline?: string } = {};
+    if (data.status) patch.status = data.status;
 
     if (data.intent === "extend" && data.extendHours) {
       const { data: current, error: readError } = await db
@@ -218,8 +218,8 @@ export const updatePromise = createServerFn({ method: "POST" })
         .single();
       fail("Promise not found", readError);
       const next = new Date(new Date(current!.deadline).getTime() + data.extendHours * 3600_000);
-      patch['deadline'] = next.toISOString();
-      patch['status'] = "on_track";
+      patch.deadline = next.toISOString();
+      patch.status = "on_track";
     }
 
     if (Object.keys(patch).length > 0) {
