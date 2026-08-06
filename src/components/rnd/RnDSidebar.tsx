@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "@tanstack/react-router";
 import {
   Lightbulb,
   Bot,
@@ -97,6 +98,12 @@ export const RnDSidebar = ({ activeTab, onTabChange, unreadCount }: RnDSidebarPr
             <p className="text-xs text-muted-foreground">Live data</p>
           </div>
         </div>
+        <Link
+          to="/pro-manager"
+          className="mt-2 flex items-center justify-center rounded-xl border border-border px-4 py-2 text-xs text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+        >
+          Open Pro Manager
+        </Link>
       </div>
     </aside>
   );
