@@ -80,6 +80,7 @@ export interface PMUpgrade {
   type: string;
   item: string;
   status: string;
+  created_at: string;
 }
 
 export interface PMRenewal {
