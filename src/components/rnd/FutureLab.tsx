@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useIdeas, useInvalidateRnD, rndKeys } from "@/hooks/useRnDData";
+import { useIdeasPaged, useInvalidateRnD, rndKeys } from "@/hooks/useRnDData";
 import { useRnDAI } from "@/hooks/useRnDAI";
 import { createIdea, voteIdea, updateIdeaStatus } from "@/lib/rnd-data.functions";
 import { cn } from "@/lib/utils";
@@ -55,7 +55,6 @@ const statusTone: Record<string, string> = {
 };
 
 export const FutureLab = ({ search }: { search: string }) => {
-  const { data: ideas, isLoading } = useIdeas();
   const invalidate = useInvalidateRnD();
   const { evaluateIdea, isLoading: aiLoading } = useRnDAI();
 
@@ -64,6 +63,7 @@ export const FutureLab = ({ search }: { search: string }) => {
   const setStatus = useServerFn(updateIdeaStatus);
 
   const [filter, setFilter] = useState("all");
+  const { ideas, total, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useIdeasPaged(filter);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -75,12 +75,11 @@ export const FutureLab = ({ search }: { search: string }) => {
   });
   const [evaluation, setEvaluation] = useState<{ id: string; text: string } | null>(null);
 
-  const visible = (ideas ?? []).filter((idea) => {
-    const matchesCategory = filter === "all" || idea.category === filter;
+  const visible = ideas.filter((idea) => {
     const term = search.trim().toLowerCase();
     const matchesSearch =
       !term || idea.title.toLowerCase().includes(term) || idea.description.toLowerCase().includes(term);
-    return matchesCategory && matchesSearch;
+    return matchesSearch;
   });
 
   const handleSubmit = async () => {
