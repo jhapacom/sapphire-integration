@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   Budget,
@@ -27,8 +27,22 @@ type RnDTable =
   | "rnd_pipeline_items"
   | "rnd_transactions";
 
-async function selectAll<T>(table: RnDTable, order: string, ascending = false): Promise<T[]> {
-  const { data, error } = await supabase.from(table).select("*").order(order, { ascending });
+/** Hard cap on non-paginated reads so a large table can never flood the client. */
+export const RND_MAX_ROWS = 200;
+/** Rows fetched per page by the paginated idea list. */
+export const RND_PAGE_SIZE = 30;
+
+async function selectAll<T>(
+  table: RnDTable,
+  order: string,
+  ascending = false,
+  limit: number = RND_MAX_ROWS,
+): Promise<T[]> {
+  const { data, error } = await supabase
+    .from(table)
+    .select("*")
+    .order(order, { ascending })
+    .limit(limit);
   if (error) throw new Error(error.message);
   return (data ?? []) as T[];
 }
@@ -50,6 +64,36 @@ export const rndKeys = {
 
 export const useIdeas = () =>
   useQuery({ queryKey: rndKeys.ideas, queryFn: () => selectAll<Idea>("rnd_ideas", "created_at") });
+
+/** Paginated idea feed for Future Lab. Filters by category server-side when set. */
+export const useIdeasPaged = (category: string) => {
+  const query = useInfiniteQuery({
+    queryKey: [...rndKeys.ideas, "paged", category],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const from = pageParam * RND_PAGE_SIZE;
+      let request = supabase
+        .from("rnd_ideas")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(from, from + RND_PAGE_SIZE - 1);
+      if (category !== "all") request = request.eq("category", category);
+      const { data, error, count } = await request;
+      if (error) throw new Error(error.message);
+      return { rows: (data ?? []) as Idea[], page: pageParam, total: count ?? 0 };
+    },
+    getNextPageParam: (last) => ((last.page + 1) * RND_PAGE_SIZE < last.total ? last.page + 1 : undefined),
+  });
+
+  return {
+    ideas: (query.data?.pages ?? []).flatMap((entry) => entry.rows),
+    total: query.data?.pages?.[0]?.total ?? 0,
+    isLoading: query.isLoading,
+    hasNextPage: query.hasNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
+    fetchNextPage: () => void query.fetchNextPage(),
+  };
+};
 
 export const usePrototypes = () =>
   useQuery({ queryKey: rndKeys.prototypes, queryFn: () => selectAll<Prototype>("rnd_prototypes", "created_at") });

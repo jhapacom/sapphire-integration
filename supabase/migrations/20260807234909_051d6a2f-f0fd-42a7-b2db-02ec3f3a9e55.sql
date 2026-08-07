@@ -1,0 +1,65 @@
+-- Pro Manager: ordering columns
+CREATE INDEX IF NOT EXISTS idx_pm_tickets_opened_at ON public.pm_tickets (opened_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_tickets_user_code ON public.pm_tickets (user_code);
+CREATE INDEX IF NOT EXISTS idx_pm_tickets_status ON public.pm_tickets (status);
+CREATE INDEX IF NOT EXISTS idx_pm_issues_created_at ON public.pm_issues (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_issues_status ON public.pm_issues (status);
+CREATE INDEX IF NOT EXISTS idx_pm_assist_created_at ON public.pm_assist_sessions (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_assist_user_code ON public.pm_assist_sessions (user_code);
+CREATE INDEX IF NOT EXISTS idx_pm_promises_deadline ON public.pm_promises (deadline);
+CREATE INDEX IF NOT EXISTS idx_pm_promises_status ON public.pm_promises (status);
+CREATE INDEX IF NOT EXISTS idx_pm_upgrades_created_at ON public.pm_upgrades (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_upgrades_user_code ON public.pm_upgrades (user_code);
+CREATE INDEX IF NOT EXISTS idx_pm_renewals_expiry ON public.pm_renewals (expiry);
+CREATE INDEX IF NOT EXISTS idx_pm_renewals_user_code ON public.pm_renewals (user_code);
+CREATE INDEX IF NOT EXISTS idx_pm_usage_user_code ON public.pm_usage (user_code);
+CREATE INDEX IF NOT EXISTS idx_pm_products_user_code ON public.pm_products (user_code);
+CREATE INDEX IF NOT EXISTS idx_pm_licenses_user_code ON public.pm_licenses (user_code);
+CREATE INDEX IF NOT EXISTS idx_pm_compliance_user_code ON public.pm_compliance (user_code);
+CREATE INDEX IF NOT EXISTS idx_pm_satisfaction_csat ON public.pm_satisfaction (csat DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_satisfaction_user_code ON public.pm_satisfaction (user_code);
+CREATE INDEX IF NOT EXISTS idx_pm_users_code ON public.pm_users (code);
+CREATE INDEX IF NOT EXISTS idx_pm_users_status ON public.pm_users (status);
+
+-- Pro Manager: logs and governance
+CREATE INDEX IF NOT EXISTS idx_pm_audit_created_at ON public.pm_audit_logs (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_audit_category ON public.pm_audit_logs (category);
+CREATE INDEX IF NOT EXISTS idx_pm_comm_created_at ON public.pm_communication_logs (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_comm_user_code ON public.pm_communication_logs (user_code);
+CREATE INDEX IF NOT EXISTS idx_pm_alerts_created_at ON public.pm_alerts (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_alerts_acknowledged ON public.pm_alerts (acknowledged);
+CREATE INDEX IF NOT EXISTS idx_pm_escalations_created_at ON public.pm_escalations (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_escalations_status ON public.pm_escalations (status);
+CREATE INDEX IF NOT EXISTS idx_pm_quality_detected_at ON public.pm_quality_alerts (detected_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_decisions_requested_at ON public.pm_decisions (requested_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_decisions_status ON public.pm_decisions (status);
+CREATE INDEX IF NOT EXISTS idx_pm_reports_generated_at ON public.pm_reports (generated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_conversations_created_at ON public.pm_ai_conversations (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_messages_conversation ON public.pm_ai_messages (conversation_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_pm_settings_section ON public.pm_settings (section);
+CREATE INDEX IF NOT EXISTS idx_pm_health_code ON public.pm_health_metrics (code);
+CREATE INDEX IF NOT EXISTS idx_pm_manager_code ON public.pm_manager_metrics (manager_code);
+
+-- R&D
+CREATE INDEX IF NOT EXISTS idx_rnd_ideas_created_at ON public.rnd_ideas (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rnd_ideas_status ON public.rnd_ideas (status);
+CREATE INDEX IF NOT EXISTS idx_rnd_ideas_category ON public.rnd_ideas (category);
+CREATE INDEX IF NOT EXISTS idx_rnd_ideas_author ON public.rnd_ideas (author);
+CREATE INDEX IF NOT EXISTS idx_rnd_prototypes_created_at ON public.rnd_prototypes (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rnd_prototypes_status ON public.rnd_prototypes (status);
+CREATE INDEX IF NOT EXISTS idx_rnd_impact_created_at ON public.rnd_impact_analyses (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rnd_trends_detected_at ON public.rnd_trends (detected_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rnd_market_gaps_created_at ON public.rnd_market_gaps (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rnd_feedback_created_at ON public.rnd_feedback (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rnd_feedback_category ON public.rnd_feedback (category);
+CREATE INDEX IF NOT EXISTS idx_rnd_decisions_submitted_at ON public.rnd_decisions (submitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rnd_decisions_status ON public.rnd_decisions (status);
+CREATE INDEX IF NOT EXISTS idx_rnd_notifications_created_at ON public.rnd_notifications (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rnd_notifications_dismissed ON public.rnd_notifications (dismissed, read);
+CREATE INDEX IF NOT EXISTS idx_rnd_transactions_budget ON public.rnd_transactions (budget_id, occurred_on DESC);
+CREATE INDEX IF NOT EXISTS idx_rnd_technologies_ring ON public.rnd_technologies (ring);
+CREATE INDEX IF NOT EXISTS idx_rnd_pipeline_stage ON public.rnd_pipeline_items (stage);
+CREATE INDEX IF NOT EXISTS idx_rnd_pipeline_created_at ON public.rnd_pipeline_items (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rnd_evaluations_created_at ON public.rnd_idea_evaluations (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_rnd_ai_messages_session ON public.rnd_ai_messages (session_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_rnd_budgets_current ON public.rnd_budgets (is_current);

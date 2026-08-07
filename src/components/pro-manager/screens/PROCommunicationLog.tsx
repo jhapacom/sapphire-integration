@@ -1,10 +1,11 @@
-import { usePMCommunications } from "@/hooks/useProManagerData";
+import { Button } from "@/components/ui/button";
+import { usePMCommunicationsPaged } from "@/hooks/useProManagerData";
 import { PMBadge, PMEmpty, PMLoading, PMPanel, PMSection, formatDate } from "../pm-ui";
 
 export const PROCommunicationLog = ({ search = "" }: { search?: string }) => {
-  const { data, isLoading } = usePMCommunications();
+  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = usePMCommunicationsPaged();
   const term = search.trim().toLowerCase();
-  const logs = (data ?? []).filter((row) =>
+  const logs = rows.filter((row) =>
     term ? [row.code, row.type, row.user_code, row.content].join(" ").toLowerCase().includes(term) : true,
   );
 
@@ -32,6 +33,19 @@ export const PROCommunicationLog = ({ search = "" }: { search?: string }) => {
               </li>
             ))}
           </ul>
+        )}
+
+        {!isLoading && (
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Showing {rows.length} of {total} entries
+            </p>
+            {hasNextPage && (
+              <Button size="sm" variant="outline" disabled={isFetchingNextPage} onClick={fetchNextPage}>
+                {isFetchingNextPage ? "Loading…" : "Load more"}
+              </Button>
+            )}
+          </div>
         )}
       </PMPanel>
     </PMSection>

@@ -1,15 +1,15 @@
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { usePMAuditLogs } from "@/hooks/useProManagerData";
+import { usePMAuditLogsPaged } from "@/hooks/useProManagerData";
 import { downloadCsv, useProManagerActions } from "@/hooks/useProManagerActions";
 import { PMBadge, PMEmpty, PMLoading, PMPanel, PMSection, StatusBadge, formatDate } from "../pm-ui";
 
 export const PROAuditLogs = ({ search = "" }: { search?: string }) => {
-  const { data, isLoading } = usePMAuditLogs();
+  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = usePMAuditLogsPaged();
   const { exportAuditTrail, run } = useProManagerActions();
 
   const term = search.trim().toLowerCase();
-  const logs = (data ?? []).filter((row) =>
+  const logs = rows.filter((row) =>
     term
       ? [row.action, row.category, row.details, row.actor, row.target, row.status].join(" ").toLowerCase().includes(term)
       : true,
@@ -55,6 +55,19 @@ export const PROAuditLogs = ({ search = "" }: { search?: string }) => {
               </li>
             ))}
           </ul>
+        )}
+
+        {!isLoading && (
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Showing {rows.length} of {total} entries
+            </p>
+            {hasNextPage && (
+              <Button size="sm" variant="outline" disabled={isFetchingNextPage} onClick={fetchNextPage}>
+                {isFetchingNextPage ? "Loading…" : "Load more"}
+              </Button>
+            )}
+          </div>
         )}
       </PMPanel>
     </PMSection>
