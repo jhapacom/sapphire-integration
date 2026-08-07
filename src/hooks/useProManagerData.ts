@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   PMAlert,
@@ -52,10 +52,58 @@ type PMTable =
   | "pm_decisions"
   | "pm_reports";
 
-async function selectAll<T>(table: PMTable, order: string, ascending = false): Promise<T[]> {
-  const { data, error } = await supabase.from(table).select("*").order(order, { ascending });
+/** Hard cap on non-paginated reads so a large table can never flood the client. */
+export const PM_MAX_ROWS = 200;
+/** Rows fetched per page by the paginated log hooks. */
+export const PM_PAGE_SIZE = 50;
+
+async function selectAll<T>(
+  table: PMTable,
+  order: string,
+  ascending = false,
+  limit: number = PM_MAX_ROWS,
+): Promise<T[]> {
+  const { data, error } = await supabase
+    .from(table)
+    .select("*")
+    .order(order, { ascending })
+    .limit(limit);
   if (error) throw new Error(error.message);
   return (data ?? []) as T[];
+}
+
+type Page<T> = { rows: T[]; page: number; total: number };
+
+async function selectPage<T>(table: PMTable, order: string, ascending: boolean, page: number): Promise<Page<T>> {
+  const from = page * PM_PAGE_SIZE;
+  const { data, error, count } = await supabase
+    .from(table)
+    .select("*", { count: "exact" })
+    .order(order, { ascending })
+    .range(from, from + PM_PAGE_SIZE - 1);
+  if (error) throw new Error(error.message);
+  return { rows: (data ?? []) as T[], page, total: count ?? 0 };
+}
+
+function usePagedTable<T>(queryKey: readonly unknown[], table: PMTable, order: string, ascending = false) {
+  const query = useInfiniteQuery({
+    queryKey,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => selectPage<T>(table, order, ascending, pageParam),
+    getNextPageParam: (last: Page<T>) => ((last.page + 1) * PM_PAGE_SIZE < last.total ? last.page + 1 : undefined),
+  });
+
+  const rows = (query.data?.pages ?? []).flatMap((entry) => entry.rows);
+  const total = query.data?.pages?.[0]?.total ?? 0;
+
+  return {
+    rows,
+    total,
+    isLoading: query.isLoading,
+    hasNextPage: query.hasNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
+    fetchNextPage: () => void query.fetchNextPage(),
+  };
 }
 
 export const pmKeys = {
@@ -153,6 +201,14 @@ export const usePMCompliance = () =>
 
 export const usePMAuditLogs = () =>
   useQuery({ queryKey: pmKeys.audit, queryFn: () => selectAll<PMAuditLog>("pm_audit_logs", "created_at") });
+
+/** Paginated audit trail for the dedicated Audit Logs screen. */
+export const usePMAuditLogsPaged = () =>
+  usePagedTable<PMAuditLog>([...pmKeys.audit, "paged"], "pm_audit_logs", "created_at");
+
+/** Paginated communication trail for the Communication Log screen. */
+export const usePMCommunicationsPaged = () =>
+  usePagedTable<PMCommunicationLog>([...pmKeys.communications, "paged"], "pm_communication_logs", "created_at");
 
 export const usePMSettings = () =>
   useQuery({ queryKey: pmKeys.settings, queryFn: () => selectAll<PMSetting>("pm_settings", "section", true) });
