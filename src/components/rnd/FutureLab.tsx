@@ -288,6 +288,19 @@ export const FutureLab = ({ search }: { search: string }) => {
           ))}
         </div>
       )}
+
+      {!isLoading && ideas.length > 0 && (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            Showing {ideas.length} of {total} ideas
+          </p>
+          {hasNextPage && (
+            <Button variant="outline" size="sm" disabled={isFetchingNextPage} onClick={fetchNextPage}>
+              {isFetchingNextPage && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />} Load more
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
