@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 const BASE_SYSTEM_PROMPT = `You are an advanced AI R&D Assistant for Software Vala, a futuristic research and development management system.
 You specialize in innovation strategy, technology feasibility analysis, market trend prediction, and research optimization.
 Provide actionable, data-driven insights with quantified metrics when possible.
@@ -339,7 +341,10 @@ export async function runRnDAI(type: string, data: RnDAIData): Promise<string> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`AI gateway error [${response.status}]: ${errorText}`);
+    logger.error(
+      { scope: "rnd.ai.server", event: "ai_gateway_error", status: response.status },
+      new Error(errorText),
+    );
     if (response.status === 429) throw new Error("Rate limit exceeded. Please try again in a moment.");
     if (response.status === 402) throw new Error("AI usage limit reached. Please add credits.");
     throw new Error(`AI request failed [${response.status}]: ${errorText}`);
