@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { logger, toMessage } from "@/lib/logger";
 import { runRnDAIRequest } from "@/lib/rnd-ai.functions";
 
 type Payload = Record<string, string | undefined>;
@@ -21,7 +22,8 @@ export const useRnDAI = () => {
       const response = await run({ data: { type, data: clean(payload) } });
       return response.result;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "AI request failed";
+      const message = toMessage(error, "AI request failed");
+      logger.error({ scope: "rnd.ai", event: "ai_request_failed", type }, error);
       toast.error("AI request failed", { description: message });
       return null;
     } finally {
