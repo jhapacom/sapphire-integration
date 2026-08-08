@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
-import { RnDSidebar, type RnDSectionId } from "@/components/rnd/RnDSidebar";
+import { RnDMobileNav, RnDSidebar, type RnDSectionId } from "@/components/rnd/RnDSidebar";
 import { RnDTopBar } from "@/components/rnd/RnDTopBar";
 import { FutureLab } from "@/components/rnd/FutureLab";
 import { AIRnDAssistant } from "@/components/rnd/AIRnDAssistant";
@@ -55,7 +55,7 @@ function RnDDashboard() {
   const unread = (notifications ?? []).filter((item) => !item.read).length;
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-dvh">
       <RnDSidebar activeTab={activeTab} onTabChange={setActiveTab} unreadCount={unread} />
       <div className="flex min-w-0 flex-1 flex-col">
         <RnDTopBar
@@ -63,6 +63,7 @@ function RnDDashboard() {
           onTabChange={setActiveTab}
           search={search}
           onSearchChange={setSearch}
+          mobileNav={<RnDMobileNav activeTab={activeTab} onTabChange={setActiveTab} unreadCount={unread} />}
           stats={{
             ideas: ideas?.length ?? 0,
             prototypes: prototypes?.length ?? 0,
@@ -70,7 +71,7 @@ function RnDDashboard() {
             decisions: decisions?.length ?? 0,
           }}
         />
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 sm:p-6">
           <h1 className="sr-only">Software Vala R&amp;D Dashboard</h1>
           {activeTab === "future-lab" && <FutureLab search={search} />}
           {activeTab === "ai-assistant" && <AIRnDAssistant />}

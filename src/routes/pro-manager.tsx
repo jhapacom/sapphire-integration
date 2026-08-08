@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
-import { PROSidebar, type PROScreen } from "@/components/pro-manager/PROSidebar";
+import { PROMobileNav, PROSidebar, type PROScreen } from "@/components/pro-manager/PROSidebar";
 import { PROTopBar } from "@/components/pro-manager/PROTopBar";
 import { PRODashboard } from "@/components/pro-manager/screens/PRODashboard";
 import { PROUserRegistry } from "@/components/pro-manager/screens/PROUserRegistry";
@@ -99,13 +99,14 @@ function ProManagerDashboard() {
   const sessionLabel = `${String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:${String(secondsLeft % 60).padStart(2, "0")} session`;
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-dvh">
       <PROSidebar activeScreen={activeScreen} onScreenChange={setActiveScreen} badges={badges} />
       <div className="flex min-w-0 flex-1 flex-col">
         <PROTopBar
           activeScreen={activeScreen}
           search={search}
           onSearchChange={setSearch}
+          mobileNav={<PROMobileNav activeScreen={activeScreen} onScreenChange={setActiveScreen} badges={badges} />}
           sessionLabel={secondsLeft === 0 ? "session expired" : sessionLabel}
           stats={{
             users: users?.length ?? 0,
@@ -114,7 +115,7 @@ function ProManagerDashboard() {
             decisions: pendingDecisions,
           }}
         />
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 sm:p-6">
           <h1 className="sr-only">Software Vala Pro Manager</h1>
           {activeScreen === "pro_dashboard" && <PRODashboard onNavigate={setActiveScreen} />}
           {activeScreen === "pro_user_registry" && <PROUserRegistry search={search} />}
