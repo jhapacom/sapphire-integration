@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 export type PMAIData = Record<string, string | number | boolean | undefined>;
 
 const BASE_SYSTEM = `You are the AI co-pilot for the Software Vala Pro Manager module.
@@ -118,7 +120,10 @@ export async function runProManagerAI(type: string, data: PMAIData): Promise<str
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`AI gateway error [${response.status}]: ${errorText}`);
+    logger.error(
+      { scope: "pm.ai.server", event: "ai_gateway_error", status: response.status },
+      new Error(errorText),
+    );
     if (response.status === 429) throw new Error("Rate limit exceeded. Please try again in a moment.");
     if (response.status === 402) throw new Error("AI usage limit reached. Please add credits.");
     throw new Error(`AI request failed [${response.status}]: ${errorText}`);

@@ -1,6 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { logger, toMessage } from "@/lib/logger";
 import {
   acknowledgeAlert,
   createTicket,
@@ -54,12 +55,12 @@ export const useProManagerActions = () => {
     try {
       const result = await promise;
       invalidate();
+      logger.info({ scope: "pm.actions", event: "action_succeeded", action: label });
       toast.success(label);
       return result;
     } catch (error) {
-      toast.error(label + " failed", {
-        description: error instanceof Error ? error.message : "Unexpected error",
-      });
+      logger.error({ scope: "pm.actions", event: "action_failed", action: label }, error);
+      toast.error(label + " failed", { description: toMessage(error) });
       return null;
     }
   }
