@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { Brain, Search, Activity, Sparkles, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -11,9 +12,10 @@ interface RnDTopBarProps {
   search: string;
   onSearchChange: (value: string) => void;
   stats: { ideas: number; prototypes: number; trends: number; decisions: number };
+  mobileNav?: ReactNode;
 }
 
-export const RnDTopBar = ({ activeTab, onTabChange, search, onSearchChange, stats }: RnDTopBarProps) => {
+export const RnDTopBar = ({ activeTab, onTabChange, search, onSearchChange, stats, mobileNav }: RnDTopBarProps) => {
   const quickTabs = rndSections.filter((section) =>
     ["future-lab", "ai-assistant", "idea-scorer", "tech-radar", "pipeline", "prototype", "trends", "decisions"].includes(
       section.id,
@@ -29,9 +31,10 @@ export const RnDTopBar = ({ activeTab, onTabChange, search, onSearchChange, stat
 
   return (
     <header className="border-b border-border bg-surface/70 backdrop-blur-xl">
-      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        {mobileNav}
         <motion.div
-          className="brand-soft flex items-center gap-3 rounded-xl border border-border px-4 py-2"
+          className="brand-soft hidden items-center gap-3 sm:flex rounded-xl border border-border px-4 py-2"
           animate={{ boxShadow: ["0 0 0 rgba(0,0,0,0)", "var(--shadow-glow)", "0 0 0 rgba(0,0,0,0)"] }}
           transition={{ duration: 4, repeat: Infinity }}
         >
@@ -70,7 +73,7 @@ export const RnDTopBar = ({ activeTab, onTabChange, search, onSearchChange, stat
         </div>
       </div>
 
-      <div className="scroll-slim flex gap-1 overflow-x-auto px-4 pb-3">
+      <nav aria-label="R&D quick sections" className="scroll-slim flex gap-1 overflow-x-auto px-4 pb-3">
         {quickTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -80,21 +83,23 @@ export const RnDTopBar = ({ activeTab, onTabChange, search, onSearchChange, stat
               key={tab.id}
               type="button"
               onClick={() => onTabChange(tab.id)}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors",
+                "flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 isActive ? "brand-soft border border-border text-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <Icon className={cn("h-4 w-4", isActive && "text-brand")} />
+              <Icon aria-hidden="true" className={cn("h-4 w-4", isActive && "text-brand")} />
               {tab.label}
               {count ? <span className="rounded-full bg-muted px-1.5 text-xs">{count}</span> : null}
               {["ai-assistant", "idea-scorer", "tech-radar"].includes(tab.id) && (
-                <Sparkles className="h-3 w-3 text-brand-2" />
+                <Sparkles aria-hidden="true" className="h-3 w-3 text-brand-2" />
               )}
             </button>
           );
         })}
-      </div>
+      </nav>
     </header>
   );
 };

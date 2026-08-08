@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Lock, Search, ShieldAlert, Timer } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
@@ -9,20 +10,22 @@ interface PROTopBarProps {
   onSearchChange: (value: string) => void;
   sessionLabel: string;
   stats: { users: number; tickets: number; escalations: number; decisions: number };
+  mobileNav?: ReactNode;
 }
 
-export const PROTopBar = ({ activeScreen, search, onSearchChange, sessionLabel, stats }: PROTopBarProps) => {
+export const PROTopBar = ({ activeScreen, search, onSearchChange, sessionLabel, stats, mobileNav }: PROTopBarProps) => {
   const current = proScreens.find((item) => item.id === activeScreen);
 
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-xl">
-      <div className="flex flex-wrap items-center gap-4 px-6 py-4">
-        <div className="min-w-[180px] flex-1">
+      <div className="flex flex-wrap items-center gap-4 px-4 py-4 sm:px-6">
+        {mobileNav}
+        <div className="min-w-0 flex-1 sm:min-w-[180px]">
           <p className="text-xs uppercase tracking-wide text-brand">Pro Manager</p>
           <p className="truncate font-display text-lg font-semibold text-foreground">{current?.label}</p>
         </div>
 
-        <div className="relative w-full max-w-xs">
+        <div className="relative w-full sm:max-w-xs">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
@@ -42,10 +45,10 @@ export const PROTopBar = ({ activeScreen, search, onSearchChange, sessionLabel, 
 
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1 rounded-full border border-warning/30 bg-warning/10 px-3 py-1 text-xs text-warning">
-            <Timer className="h-3.5 w-3.5" /> {sessionLabel}
+            <Timer aria-hidden="true" className="h-3.5 w-3.5" /> {sessionLabel}
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-3 py-1 text-xs text-muted-foreground">
-            <Lock className="h-3.5 w-3.5" /> Read-controlled
+            <Lock aria-hidden="true" className="h-3.5 w-3.5" /> Read-controlled
           </span>
           <Link
             to="/"
