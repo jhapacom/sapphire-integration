@@ -68,7 +68,7 @@ const PRONavItems = ({ activeScreen, onScreenChange, badges, animate }: PRONavPr
           onClick={() => onScreenChange(item.id)}
           aria-current={isActive ? "page" : undefined}
           initial={animate ? { opacity: 0, x: -16 } : false}
-          animate={animate ? { opacity: 1, x: 0 } : undefined}
+          animate={animate ? { opacity: 1, x: 0 } : false}
           transition={{ delay: index * 0.02 }}
           whileHover={{ x: 4 }}
           className={cn(

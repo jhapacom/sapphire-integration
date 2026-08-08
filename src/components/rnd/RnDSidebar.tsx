@@ -56,7 +56,7 @@ const RnDNavItems = ({ activeTab, onTabChange, unreadCount, animate }: NavProps 
           onClick={() => onTabChange(item.id)}
           aria-current={isActive ? "page" : undefined}
           initial={animate ? { opacity: 0, x: -16 } : false}
-          animate={animate ? { opacity: 1, x: 0 } : undefined}
+          animate={animate ? { opacity: 1, x: 0 } : false}
           transition={{ delay: index * 0.03 }}
           whileHover={{ x: 4 }}
           className={cn(
