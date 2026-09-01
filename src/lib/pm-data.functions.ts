@@ -293,7 +293,6 @@ export const updateLicense = createServerFn({ method: "POST" })
       action = "License Renewed";
       details = `${row.license_type} licence for ${data.user_code} renewed until ${patch["expiry"]}`;
     } else if (data.intent === "upgrade") {
-      patch["license_type"] = row.license_type === "Enterprise" ? "Enterprise" : "Enterprise";
       action = "License Upgrade Recommended";
       details = `Upgrade from ${row.license_type} to Enterprise recommended for ${data.user_code}`;
       status = "forwarded";
@@ -307,11 +306,6 @@ export const updateLicense = createServerFn({ method: "POST" })
       action = "Domain Transfer Requested";
       details = `Transfer/rebind requested for ${row.domain} (${data.user_code}) — requires higher approval`;
       status = "forwarded";
-    }
-
-    if (data.intent === "upgrade") {
-      // recommendation only — no licence type is changed by the Pro Manager
-      delete patch["license_type"];
     }
 
     if (Object.keys(patch).length > 0) {
