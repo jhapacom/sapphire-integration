@@ -36,6 +36,8 @@ export const useProManagerActions = () => {
     createTicket: useServerFn(createTicket),
     updateTicketStatus: useServerFn(updateTicketStatus),
     updateIssue: useServerFn(updateIssue),
+    updateLicense: useServerFn(updateLicense),
+
     updateAssistSession: useServerFn(updateAssistSession),
     updatePromise: useServerFn(updatePromise),
     updateUpgrade: useServerFn(updateUpgrade),
