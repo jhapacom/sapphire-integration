@@ -17,6 +17,8 @@ import {
   updateAssistSession,
   updateConversation,
   updateIssue,
+  updateLicense,
+
   updatePromise,
   updateQualityAlert,
   updateRenewal,
