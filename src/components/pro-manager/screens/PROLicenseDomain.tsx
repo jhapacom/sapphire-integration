@@ -1,12 +1,16 @@
+import { Button } from "@/components/ui/button";
 import { usePMLicenses } from "@/hooks/useProManagerData";
+import { useProManagerActions } from "@/hooks/useProManagerActions";
 import { PMEmpty, PMLoading, PMPanel, PMSection, StatusBadge, formatDay } from "../pm-ui";
 
 export const PROLicenseDomain = ({ search = "" }: { search?: string }) => {
   const { data, isLoading } = usePMLicenses();
+  const { updateLicense, run } = useProManagerActions();
   const term = search.trim().toLowerCase();
   const licenses = (data ?? []).filter((row) =>
     term ? [row.user_code, row.license_type, row.domain, row.domain_status].join(" ").toLowerCase().includes(term) : true,
   );
+
 
   return (
     <PMSection
