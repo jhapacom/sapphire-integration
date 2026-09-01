@@ -279,7 +279,7 @@ export const updateLicense = createServerFn({ method: "POST" })
     fail("Could not load the license", readError);
     if (!row) throw new Error("License record not found");
 
-    const patch: Record<string, string> = {};
+    const patch: { expiry?: string; domain_status?: string; transfer_status?: string } = {};
     let action = "";
     let details = "";
     let status: AuditInput["status"] = "completed";
@@ -289,20 +289,20 @@ export const updateLicense = createServerFn({ method: "POST" })
       const from = Number.isNaN(base.getTime()) || base < new Date() ? new Date() : base;
       const next = new Date(from);
       next.setFullYear(next.getFullYear() + 1);
-      patch["expiry"] = next.toISOString().slice(0, 10);
+      patch.expiry = next.toISOString().slice(0, 10);
       action = "License Renewed";
-      details = `${row.license_type} licence for ${data.user_code} renewed until ${patch["expiry"]}`;
+      details = `${row.license_type} licence for ${data.user_code} renewed until ${patch.expiry}`;
     } else if (data.intent === "upgrade") {
       action = "License Upgrade Recommended";
       details = `Upgrade from ${row.license_type} to Enterprise recommended for ${data.user_code}`;
       status = "forwarded";
     } else if (data.intent === "lock_domain" || data.intent === "unlock_domain") {
       const locked = data.intent === "lock_domain";
-      patch["domain_status"] = locked ? "locked" : "verified";
+      patch.domain_status = locked ? "locked" : "verified";
       action = locked ? "Domain Locked" : "Domain Unlocked";
       details = `${row.domain} ${locked ? "locked" : "unlocked"} for ${data.user_code}`;
     } else {
-      patch["transfer_status"] = "requested";
+      patch.transfer_status = "requested";
       action = "Domain Transfer Requested";
       details = `Transfer/rebind requested for ${row.domain} (${data.user_code}) — requires higher approval`;
       status = "forwarded";
