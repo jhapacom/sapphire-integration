@@ -257,7 +257,74 @@ export const updatePromise = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/* ---------------- Licenses & domains ---------------- */
+
+export const updateLicense = createServerFn({ method: "POST" })
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        user_code: z.string().min(1),
+        intent: z.enum(["renew", "upgrade", "lock_domain", "unlock_domain", "request_transfer"]),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const { data: row, error: readError } = await db
+      .from("pm_licenses")
+      .select("expiry, license_type, domain, domain_status, transfer_status")
+      .eq("id", data.id)
+      .maybeSingle();
+    fail("Could not load the license", readError);
+    if (!row) throw new Error("License record not found");
+
+    const patch: Record<string, string> = {};
+    let action = "";
+    let details = "";
+    let status: AuditInput["status"] = "completed";
+
+    if (data.intent === "renew") {
+      const base = new Date(row.expiry);
+      const from = Number.isNaN(base.getTime()) || base < new Date() ? new Date() : base;
+      const next = new Date(from);
+      next.setFullYear(next.getFullYear() + 1);
+      patch["expiry"] = next.toISOString().slice(0, 10);
+      action = "License Renewed";
+      details = `${row.license_type} licence for ${data.user_code} renewed until ${patch["expiry"]}`;
+    } else if (data.intent === "upgrade") {
+      patch["license_type"] = row.license_type === "Enterprise" ? "Enterprise" : "Enterprise";
+      action = "License Upgrade Recommended";
+      details = `Upgrade from ${row.license_type} to Enterprise recommended for ${data.user_code}`;
+      status = "forwarded";
+    } else if (data.intent === "lock_domain" || data.intent === "unlock_domain") {
+      const locked = data.intent === "lock_domain";
+      patch["domain_status"] = locked ? "locked" : "verified";
+      action = locked ? "Domain Locked" : "Domain Unlocked";
+      details = `${row.domain} ${locked ? "locked" : "unlocked"} for ${data.user_code}`;
+    } else {
+      patch["transfer_status"] = "requested";
+      action = "Domain Transfer Requested";
+      details = `Transfer/rebind requested for ${row.domain} (${data.user_code}) — requires higher approval`;
+      status = "forwarded";
+    }
+
+    if (data.intent === "upgrade") {
+      // recommendation only — no licence type is changed by the Pro Manager
+      delete patch["license_type"];
+    }
+
+    if (Object.keys(patch).length > 0) {
+      const { error } = await db.from("pm_licenses").update(patch).eq("id", data.id);
+      fail("Could not update the license", error);
+    }
+
+    await writeAudit(db, { action, category: "decision", details, target: data.user_code, status });
+    return { ok: true };
+  });
+
 /* ---------------- Upgrades ---------------- */
+
 
 export const updateUpgrade = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) =>
