@@ -1,4 +1,5 @@
 # Roadmap
 
-- [x] Pro Manager: all data served from Supabase pm_* tables (no seed arrays in code)
-- [ ] R&D: expand real seed rows for ideas, prototypes and trends
+- [x] Pro Manager data served from Supabase pm_* tables
+- [x] R&D: Technology Radar + Innovation Pipeline read from database (mock arrays removed)
+- [x] R&D: expanded real ideas, prototypes, trends, pipeline and evaluations

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRnDAI } from "@/hooks/useRnDAI";
+import { useTechnologies } from "@/hooks/useRnDData";
 import {
   Radar,
   Brain,
@@ -20,32 +21,9 @@ import {
   Shield
 } from "lucide-react";
 
-interface Technology {
-  id: string;
-  name: string;
-  category: "languages" | "frameworks" | "tools" | "platforms" | "techniques" | "infrastructure";
-  ring: "adopt" | "trial" | "assess" | "hold";
-  description: string;
-  relevance: number;
-}
-
-const mockTechnologies: Technology[] = [
-  { id: "1", name: "TypeScript 5.x", category: "languages", ring: "adopt", description: "Mature type safety for JS apps", relevance: 95 },
-  { id: "2", name: "React 19", category: "frameworks", ring: "adopt", description: "Server components, improved Suspense", relevance: 92 },
-  { id: "3", name: "Bun Runtime", category: "tools", ring: "trial", description: "Fast all-in-one JS runtime", relevance: 78 },
-  { id: "4", name: "Deno 2.0", category: "platforms", ring: "trial", description: "Secure Node alternative with npm support", relevance: 75 },
-  { id: "5", name: "HTMX", category: "techniques", ring: "assess", description: "Server-driven UI without heavy JS", relevance: 65 },
-  { id: "6", name: "Rust for WebAssembly", category: "languages", ring: "trial", description: "High-performance browser compute", relevance: 72 },
-  { id: "7", name: "Edge Computing", category: "infrastructure", ring: "adopt", description: "Distributed compute at CDN edge", relevance: 88 },
-  { id: "8", name: "AI Code Assistants", category: "tools", ring: "adopt", description: "GitHub Copilot, Cursor, etc.", relevance: 90 },
-  { id: "9", name: "GraphQL Federation", category: "techniques", ring: "trial", description: "Unified API from microservices", relevance: 70 },
-  { id: "10", name: "Web Components", category: "frameworks", ring: "assess", description: "Framework-agnostic components", relevance: 55 },
-  { id: "11", name: "Temporal Workflows", category: "platforms", ring: "assess", description: "Durable execution engine", relevance: 60 },
-  { id: "12", name: "Vector Databases", category: "infrastructure", ring: "trial", description: "AI embeddings storage", relevance: 82 },
-];
-
 export const TechnologyRadar = () => {
-  const [technologies, setTechnologies] = useState<Technology[]>(mockTechnologies);
+  const { data: technologiesData } = useTechnologies();
+  const technologies = technologiesData ?? [];
   const [selectedRing, setSelectedRing] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
@@ -228,12 +206,11 @@ export const TechnologyRadar = () => {
               
               {/* Technology Dots */}
               {filteredTechs.map((tech, idx) => {
-                const ringDistance = {
-                  adopt: 0.85,
-                  trial: 0.65,
-                  assess: 0.45,
-                  hold: 0.25,
-                }[tech.ring];
+                const ringDistance =
+                  ({ adopt: 0.85, trial: 0.65, assess: 0.45, hold: 0.25 } as Record<string, number>)[
+                    tech.ring
+                  ] ?? 0.45;
+
                 
                 const angle = (idx / filteredTechs.length) * 360;
                 const x = 50 + ringDistance * 40 * Math.cos((angle * Math.PI) / 180);
