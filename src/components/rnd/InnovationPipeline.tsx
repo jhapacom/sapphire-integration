@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRnDAI } from "@/hooks/useRnDAI";
+import { usePipeline } from "@/hooks/useRnDData";
+import type { PipelineItem } from "@/lib/rnd-types";
 import {
   Lightbulb,
   FlaskConical,
@@ -21,76 +23,6 @@ import {
   Sparkles
 } from "lucide-react";
 
-interface PipelineItem {
-  id: string;
-  title: string;
-  description: string;
-  stage: "ideation" | "research" | "prototype" | "testing" | "launch" | "completed";
-  progress: number;
-  priority: "low" | "medium" | "high" | "critical";
-  assignee: string;
-  dueDate: string;
-  aiScore?: number;
-}
-
-const mockPipelineItems: PipelineItem[] = [
-  {
-    id: "1",
-    title: "AI-Powered Code Review",
-    description: "Automated code review with AI suggestions",
-    stage: "prototype",
-    progress: 65,
-    priority: "high",
-    assignee: "vala(rnd)2341",
-    dueDate: "2024-02-15",
-    aiScore: 87
-  },
-  {
-    id: "2",
-    title: "Real-Time Collaboration",
-    description: "Multi-cursor editing with presence",
-    stage: "testing",
-    progress: 85,
-    priority: "critical",
-    assignee: "vala(dev)4412",
-    dueDate: "2024-02-10",
-    aiScore: 92
-  },
-  {
-    id: "3",
-    title: "Visual Database Designer",
-    description: "Drag-and-drop schema builder",
-    stage: "research",
-    progress: 35,
-    priority: "medium",
-    assignee: "vala(design)8892",
-    dueDate: "2024-03-01",
-    aiScore: 78
-  },
-  {
-    id: "4",
-    title: "Smart Task Automation",
-    description: "AI-driven task distribution",
-    stage: "ideation",
-    progress: 15,
-    priority: "high",
-    assignee: "vala(rnd)2341",
-    dueDate: "2024-03-15",
-    aiScore: 81
-  },
-  {
-    id: "5",
-    title: "Predictive Analytics Dashboard",
-    description: "ML-powered business insights",
-    stage: "launch",
-    progress: 95,
-    priority: "high",
-    assignee: "vala(data)5567",
-    dueDate: "2024-01-30",
-    aiScore: 89
-  },
-];
-
 const stages = [
   { id: "ideation", label: "Ideation", icon: Lightbulb, color: "amber" },
   { id: "research", label: "Research", icon: FlaskConical, color: "purple" },
@@ -101,7 +33,8 @@ const stages = [
 ];
 
 export const InnovationPipeline = () => {
-  const [items, setItems] = useState<PipelineItem[]>(mockPipelineItems);
+  const { data: pipelineData } = usePipeline();
+  const items = pipelineData ?? [];
   const [selectedItem, setSelectedItem] = useState<PipelineItem | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
 
@@ -222,9 +155,9 @@ export const InnovationPipeline = () => {
                             <h4 className="text-sm font-semibold text-white line-clamp-2">
                               {item.title}
                             </h4>
-                            {item.aiScore && (
+                            {item.ai_score && (
                               <Badge className="bg-violet-500/20 text-violet-400 text-xs shrink-0">
-                                {item.aiScore}
+                                {item.ai_score}
                               </Badge>
                             )}
                           </div>
