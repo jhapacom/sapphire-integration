@@ -206,12 +206,11 @@ export const TechnologyRadar = () => {
               
               {/* Technology Dots */}
               {filteredTechs.map((tech, idx) => {
-                const ringDistance = {
-                  adopt: 0.85,
-                  trial: 0.65,
-                  assess: 0.45,
-                  hold: 0.25,
-                }[tech.ring];
+                const ringDistance =
+                  ({ adopt: 0.85, trial: 0.65, assess: 0.45, hold: 0.25 } as Record<string, number>)[
+                    tech.ring
+                  ] ?? 0.45;
+
                 
                 const angle = (idx / filteredTechs.length) * 360;
                 const x = 50 + ringDistance * 40 * Math.cos((angle * Math.PI) / 180);
