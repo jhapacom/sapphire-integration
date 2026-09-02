@@ -58,7 +58,7 @@ Every function above records an entry in `pm_audit_logs`.
 `runRnDAIRequest` (`src/lib/rnd-ai.functions.ts`) and `runProManagerAIRequest`
 (`src/lib/pm-ai.functions.ts`) accept `{ type, data }` and dispatch to the prompt
 catalogue in the matching `*-ai.server.ts` module, which calls the Lovable AI Gateway
-(`google/gemini-2.5-flash`) with `LOVABLE_API_KEY`.
+(google/gemini-3.7-flash) with `LOVABLE_API_KEY`.
 
 - R&D types: chat, idea_evaluation, trend_analysis, prototype_plan, impact_assessment,
   competitor_analysis, tech_stack_recommendation, research_synthesis,
