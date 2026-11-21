@@ -296,6 +296,51 @@ export const upsertTechnology = createServerFn({ method: "POST" })
     return row;
   });
 
+const trendSchema = z.object({
+  title: z.string().min(3).max(160),
+  source: z.string().min(2).max(120),
+  impact: z.enum(["low", "medium", "high"]),
+  relevance: z.number().int().min(0).max(100),
+  status: z.enum(["emerging", "growing", "established", "declining"]),
+  competitors: z.array(z.string().min(1).max(80)).max(20).default([]),
+  opportunity: z.string().max(2000).default(""),
+});
+
+export const saveTrend = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => trendSchema.parse(input))
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const { data: row, error } = await db.from("rnd_trends").insert(data).select().single();
+    fail("Could not save trend", error);
+    return row;
+  });
+
+export const updateTrendStatus = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({ id: z.string().uuid(), status: z.enum(["emerging", "growing", "established", "declining"]) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const { error } = await db.from("rnd_trends").update({ status: data.status }).eq("id", data.id);
+    fail("Could not update trend status", error);
+    return { ok: true };
+  });
+
+export const saveMarketGap = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({
+      gap: z.string().min(5).max(1000),
+      potential: z.enum(["low", "medium", "high"]),
+      difficulty: z.enum(["low", "medium", "high"]),
+    }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const { data: row, error } = await db.from("rnd_market_gaps").insert(data).select().single();
+    fail("Could not save market gap", error);
+    return row;
+  });
+
 export const savePipelineItem = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) =>
     z

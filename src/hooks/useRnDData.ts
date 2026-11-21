@@ -5,6 +5,7 @@ import type {
   Decision,
   Feedback,
   Idea,
+  IdeaEvaluation,
   ImpactAnalysis,
   MarketGap,
   PipelineItem,
@@ -100,6 +101,34 @@ export const usePrototypes = () =>
 
 export const useImpactAnalyses = () =>
   useQuery({ queryKey: rndKeys.impact, queryFn: () => selectAll<ImpactAnalysis>("rnd_impact_analyses", "created_at") });
+
+export const useIdeaEvaluations = () =>
+  useQuery({ queryKey: ["rnd", "idea-evaluations"], queryFn: () => selectAll<IdeaEvaluation>("rnd_idea_evaluations", "created_at") });
+
+export type RnDAiMessage = {
+  id: string;
+  session_id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+};
+
+export const useAiMessages = (sessionId: string | null) =>
+  useQuery({
+    queryKey: ["rnd", "ai-messages", sessionId],
+    enabled: Boolean(sessionId),
+    queryFn: async () => {
+      if (!sessionId) return [];
+      const { data, error } = await supabase
+        .from("rnd_ai_messages")
+        .select("id, session_id, role, content, created_at")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: true })
+        .limit(RND_MAX_ROWS);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as RnDAiMessage[];
+    },
+  });
 
 export const useTrends = () =>
   useQuery({ queryKey: rndKeys.trends, queryFn: () => selectAll<Trend>("rnd_trends", "detected_at") });

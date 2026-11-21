@@ -1,263 +1,261 @@
-import { motion } from "framer-motion";
-import { 
-  TrendingUp, 
-  Globe, 
-  Zap, 
-  Target,
-  ArrowUpRight,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  ExternalLink
-} from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { AlertCircle, ArrowUpRight, CheckCircle, Clock, Globe, Loader2, Plus, Target, TrendingUp, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useRnDAI } from "@/hooks/useRnDAI";
+import { rndKeys, useAiMessages, useInvalidateRnD, useMarketGaps, useTrends } from "@/hooks/useRnDData";
+import { saveChatMessage, saveMarketGap, saveTrend, updateTrendStatus } from "@/lib/rnd-data.functions";
+import type { MarketGap, Trend } from "@/lib/rnd-types";
 
-const trends = [
-  {
-    id: "1",
-    title: "AI-Powered Development Tools",
-    source: "Industry Analysis",
-    impact: "high",
-    relevance: 94,
-    status: "emerging",
-    competitors: ["GitHub Copilot", "Cursor", "Tabnine"],
-    opportunity: "Integrate AI code completion with our unique workflow context",
-    detectedAt: "2 hours ago",
-  },
-  {
-    id: "2",
-    title: "Low-Code Backend Solutions",
-    source: "Market Research",
-    impact: "medium",
-    relevance: 78,
-    status: "growing",
-    competitors: ["Supabase", "Firebase", "PlanetScale"],
-    opportunity: "Visual database designer with AI-generated schemas",
-    detectedAt: "6 hours ago",
-  },
-  {
-    id: "3",
-    title: "Real-Time Collaboration Features",
-    source: "User Feedback",
-    impact: "high",
-    relevance: 89,
-    status: "established",
-    competitors: ["Figma", "Linear", "Notion"],
-    opportunity: "Multi-cursor editing with presence indicators",
-    detectedAt: "1 day ago",
-  },
-];
+const analysisSession = "trend-scanner-analysis";
+const statuses = ["emerging", "growing", "established", "declining"] as const;
+const levels = ["low", "medium", "high"] as const;
 
-const gaps = [
-  {
-    id: "1",
-    gap: "No major player offers AI-driven project estimation",
-    potential: "high",
-    difficulty: "medium",
-  },
-  {
-    id: "2",
-    gap: "Limited visual debugging tools in market",
-    potential: "medium",
-    difficulty: "high",
-  },
-  {
-    id: "3",
-    gap: "Lack of unified analytics across dev lifecycle",
-    potential: "high",
-    difficulty: "low",
-  },
-];
-
-const getImpactColor = (impact: string) => {
-  switch (impact) {
-    case "high": return "bg-emerald-500/20 text-emerald-400 border-emerald-500/50";
-    case "medium": return "bg-amber-500/20 text-amber-400 border-amber-500/50";
-    case "low": return "bg-slate-500/20 text-slate-400 border-slate-500/50";
-    default: return "bg-slate-500/20 text-slate-400 border-slate-500/50";
-  }
+const impactTone: Record<string, string> = {
+  high: "border-danger/40 text-danger",
+  medium: "border-warning/40 text-warning",
+  low: "border-border text-muted-foreground",
 };
 
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case "emerging": return <Zap className="w-3 h-3" />;
-    case "growing": return <TrendingUp className="w-3 h-3" />;
-    case "established": return <CheckCircle className="w-3 h-3" />;
-    default: return <Clock className="w-3 h-3" />;
-  }
+const statusIcon = (status: string) => {
+  if (status === "emerging") return <Zap className="h-3.5 w-3.5" />;
+  if (status === "growing") return <TrendingUp className="h-3.5 w-3.5" />;
+  if (status === "established") return <CheckCircle className="h-3.5 w-3.5" />;
+  return <ArrowUpRight className="h-3.5 w-3.5" />;
 };
 
 export const TrendScanner = () => {
+  const invalidate = useInvalidateRnD();
+  const { data: trends = [], isLoading: trendsLoading, error: trendsError } = useTrends();
+  const { data: gaps = [], isLoading: gapsLoading, error: gapsError } = useMarketGaps();
+  const { data: savedAnalysis = [] } = useAiMessages(analysisSession);
+  const { isLoading: aiLoading, chat } = useRnDAI();
+  const persistMessage = useServerFn(saveChatMessage);
+  const createTrend = useServerFn(saveTrend);
+  const changeTrendStatus = useServerFn(updateTrendStatus);
+  const createGap = useServerFn(saveMarketGap);
+  const [showTrendForm, setShowTrendForm] = useState(false);
+  const [showGapForm, setShowGapForm] = useState(false);
+  const [analysis, setAnalysis] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [trendForm, setTrendForm] = useState({
+    title: "",
+    source: "",
+    impact: "medium",
+    relevance: "50",
+    status: "emerging",
+    competitors: "",
+    opportunity: "",
+  });
+  const [gapForm, setGapForm] = useState({ gap: "", potential: "medium", difficulty: "medium" });
+
+  useEffect(() => {
+    const latest = [...savedAnalysis].reverse().find((message) => message.role === "assistant");
+    setAnalysis(latest?.content ?? "");
+  }, [savedAnalysis]);
+
+  const handleAnalyze = async () => {
+    if (!trends.length && !gaps.length) {
+      toast.error("There are no saved trends or gaps to analyze yet");
+      return;
+    }
+    const prompt = `Review only these saved R&D market records. Separate observations from assumptions, do not invent current market facts, and recommend next actions.\n\nSaved trends:\n${JSON.stringify(trends)}\n\nSaved market gaps:\n${JSON.stringify(gaps)}`;
+    try {
+      await persistMessage({ data: { session_id: analysisSession, role: "user", content: prompt } });
+      const result = await chat(prompt, "Analysis of persisted R&D trends and market gaps");
+      if (!result) return;
+      await persistMessage({ data: { session_id: analysisSession, role: "assistant", content: result } });
+      await invalidate(["rnd", "ai-messages", analysisSession]);
+      toast.success("Analysis saved");
+    } catch (error) {
+      toast.error("Could not save the analysis", { description: error instanceof Error ? error.message : undefined });
+    }
+  };
+
+  const handleTrendSave = async () => {
+    const relevance = Number(trendForm.relevance);
+    if (trendForm.title.trim().length < 3 || trendForm.source.trim().length < 2 || !Number.isInteger(relevance) || relevance < 0 || relevance > 100) {
+      toast.error("Enter a title, source, and relevance from 0 to 100");
+      return;
+    }
+    setSaving(true);
+    try {
+      await createTrend({ data: {
+        ...trendForm,
+        title: trendForm.title.trim(),
+        source: trendForm.source.trim(),
+        impact: trendForm.impact as (typeof levels)[number],
+        relevance,
+        status: trendForm.status as (typeof statuses)[number],
+        competitors: trendForm.competitors.split(",").map((name) => name.trim()).filter(Boolean),
+        opportunity: trendForm.opportunity.trim(),
+      } });
+      await invalidate(rndKeys.trends);
+      setTrendForm({ title: "", source: "", impact: "medium", relevance: "50", status: "emerging", competitors: "", opportunity: "" });
+      setShowTrendForm(false);
+      toast.success("Trend saved");
+    } catch (error) {
+      toast.error("Could not save trend", { description: error instanceof Error ? error.message : undefined });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleGapSave = async () => {
+    if (gapForm.gap.trim().length < 5) {
+      toast.error("Describe the market gap first");
+      return;
+    }
+    setSaving(true);
+    try {
+      await createGap({ data: {
+        gap: gapForm.gap.trim(),
+        potential: gapForm.potential as (typeof levels)[number],
+        difficulty: gapForm.difficulty as (typeof levels)[number],
+      } });
+      await invalidate(rndKeys.gaps);
+      setGapForm({ gap: "", potential: "medium", difficulty: "medium" });
+      setShowGapForm(false);
+      toast.success("Market gap saved");
+    } catch (error) {
+      toast.error("Could not save market gap", { description: error instanceof Error ? error.message : undefined });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleStatusChange = async (trend: Trend, status: (typeof statuses)[number]) => {
+    try {
+      await changeTrendStatus({ data: { id: trend.id, status } });
+      await invalidate(rndKeys.trends);
+      toast.success("Trend status updated");
+    } catch (error) {
+      toast.error("Could not update trend status", { description: error instanceof Error ? error.message : undefined });
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
-            Trend & Competitor Scanner
-          </h2>
-          <p className="text-slate-400 text-sm mt-1">AI-powered market intelligence and opportunity detection</p>
+          <h2 className="brand-gradient-text font-display text-2xl font-bold">Trend &amp; Competitor Scanner</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Saved market signals and opportunities</p>
         </div>
-        <Button className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 gap-2">
-          <Globe className="w-4 h-4" />
-          Run Full Scan
-        </Button>
-      </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setShowGapForm((open) => !open)}><Plus className="mr-2 h-4 w-4" />Market gap</Button>
+          <Button variant="outline" onClick={() => setShowTrendForm((open) => !open)}><Plus className="mr-2 h-4 w-4" />Trend</Button>
+          <Button onClick={handleAnalyze} disabled={aiLoading || trendsLoading || gapsLoading}>
+            {aiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Globe className="mr-2 h-4 w-4" />}
+            Analyze saved records
+          </Button>
+        </div>
+      </header>
 
-      {/* Live Scanner Status */}
-      <Card className="p-4 bg-gradient-to-r from-amber-600/10 to-orange-600/10 border-amber-500/30">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <motion.div
-              className="w-3 h-3 rounded-full bg-emerald-400"
-              animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-            <span className="text-sm text-slate-300">Scanner Active</span>
-            <span className="text-xs text-slate-500">Last scan: 15 min ago</span>
-          </div>
-          <div className="flex items-center gap-4 text-xs">
-            <span className="text-slate-400">Sources monitored: <span className="text-amber-400">47</span></span>
-            <span className="text-slate-400">Competitors tracked: <span className="text-amber-400">23</span></span>
-            <span className="text-slate-400">New insights: <span className="text-emerald-400">5</span></span>
+      <Card className="panel flex flex-wrap items-center justify-between gap-3 p-4">
+        <div className="flex items-center gap-3">
+          <span className="grid h-9 w-9 place-items-center rounded-lg brand-soft text-brand-2"><TrendingUp className="h-4 w-4" /></span>
+          <div>
+            <p className="text-sm font-medium text-foreground">Live record counts</p>
+            <p className="text-xs text-muted-foreground">{trends.length} trends · {gaps.length} market gaps</p>
           </div>
         </div>
+        <p className="text-xs text-muted-foreground">AI analysis is based on saved records</p>
       </Card>
 
-      <div className="grid grid-cols-2 gap-6">
-        {/* Emerging Trends */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-amber-400" />
-            Emerging Trends
-          </h3>
-          
-          {trends.map((trend, index) => (
-            <motion.div
-              key={trend.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className="p-4 bg-slate-900/50 backdrop-blur-xl border-slate-700/50 hover:border-amber-500/30 transition-all">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h4 className="font-semibold text-white mb-1">{trend.title}</h4>
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
-                      <span>{trend.source}</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {trend.detectedAt}
-                      </span>
-                    </div>
-                  </div>
-                  <Badge className={getImpactColor(trend.impact)}>
-                    {getStatusIcon(trend.status)}
-                    <span className="ml-1">{trend.status}</span>
-                  </Badge>
-                </div>
+      {showTrendForm && (
+        <Card className="panel space-y-3 p-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <Input aria-label="Trend title" placeholder="Trend title" value={trendForm.title} onChange={(event) => setTrendForm({ ...trendForm, title: event.target.value })} />
+            <Input aria-label="Trend source" placeholder="Source" value={trendForm.source} onChange={(event) => setTrendForm({ ...trendForm, source: event.target.value })} />
+            <Input aria-label="Competitors" placeholder="Competitors, separated by commas" value={trendForm.competitors} onChange={(event) => setTrendForm({ ...trendForm, competitors: event.target.value })} />
+            <Input aria-label="Relevance score" type="number" min="0" max="100" placeholder="Relevance (0–100)" value={trendForm.relevance} onChange={(event) => setTrendForm({ ...trendForm, relevance: event.target.value })} />
+            <Select value={trendForm.impact} onValueChange={(impact) => setTrendForm({ ...trendForm, impact })}>
+              <SelectTrigger aria-label="Impact"><SelectValue placeholder="Impact" /></SelectTrigger>
+              <SelectContent>{levels.map((level) => <SelectItem key={level} value={level}>{level} impact</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={trendForm.status} onValueChange={(status) => setTrendForm({ ...trendForm, status })}>
+              <SelectTrigger aria-label="Initial status"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>{statuses.map((status) => <SelectItem key={status} value={status}>{status}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <Textarea aria-label="Opportunity" placeholder="Opportunity or implication" value={trendForm.opportunity} onChange={(event) => setTrendForm({ ...trendForm, opportunity: event.target.value })} />
+          <div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setShowTrendForm(false)}>Cancel</Button><Button onClick={handleTrendSave} disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save trend</Button></div>
+        </Card>
+      )}
 
-                <div className="mb-3">
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="text-slate-400">Relevance Score</span>
-                    <span className="text-amber-400">{trend.relevance}%</span>
-                  </div>
-                  <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-amber-500 to-orange-500"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${trend.relevance}%` }}
-                      transition={{ duration: 1, delay: index * 0.2 }}
-                    />
-                  </div>
-                </div>
+      {showGapForm && (
+        <Card className="panel space-y-3 p-4">
+          <Textarea aria-label="Market gap" placeholder="Describe the unmet need" value={gapForm.gap} onChange={(event) => setGapForm({ ...gapForm, gap: event.target.value })} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Select value={gapForm.potential} onValueChange={(potential) => setGapForm({ ...gapForm, potential })}>
+              <SelectTrigger aria-label="Market potential"><SelectValue placeholder="Potential" /></SelectTrigger>
+              <SelectContent>{levels.map((level) => <SelectItem key={level} value={level}>{level} potential</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={gapForm.difficulty} onValueChange={(difficulty) => setGapForm({ ...gapForm, difficulty })}>
+              <SelectTrigger aria-label="Difficulty"><SelectValue placeholder="Difficulty" /></SelectTrigger>
+              <SelectContent>{levels.map((level) => <SelectItem key={level} value={level}>{level} difficulty</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setShowGapForm(false)}>Cancel</Button><Button onClick={handleGapSave} disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save gap</Button></div>
+        </Card>
+      )}
 
-                <div className="mb-3">
-                  <p className="text-xs text-slate-500 mb-1">Competitors</p>
-                  <div className="flex flex-wrap gap-1">
-                    {trend.competitors.map((comp, i) => (
-                      <Badge key={i} variant="secondary" className="bg-slate-800 text-slate-300 text-xs">
-                        {comp}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
+      {(trendsError || gapsError) && <Card className="border-danger/40 p-4 text-sm text-danger">Could not load saved market records. Please try again.</Card>}
 
-                <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                  <p className="text-xs text-emerald-300 flex items-start gap-2">
-                    <Target className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                    <span><strong>Opportunity:</strong> {trend.opportunity}</span>
-                  </p>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <section className="space-y-4">
+          <h3 className="flex items-center gap-2 font-display text-lg font-semibold"><TrendingUp className="h-5 w-5 text-brand-2" />Trends</h3>
+          {trendsLoading ? <Card className="panel p-6 text-sm text-muted-foreground">Loading saved trends…</Card> : trends.length === 0 ? <Card className="panel p-6 text-sm text-muted-foreground">No trends saved yet.</Card> : trends.map((trend) => <TrendCard key={trend.id} trend={trend} onStatusChange={handleStatusChange} />)}
+        </section>
 
-        {/* Market Gaps */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Target className="w-5 h-5 text-emerald-400" />
-            Gaps We Can Dominate
-          </h3>
-
-          {gaps.map((gap, index) => (
-            <motion.div
-              key={gap.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className="p-4 bg-slate-900/50 backdrop-blur-xl border-slate-700/50 hover:border-emerald-500/30 transition-all">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-500/20">
-                    <AlertCircle className="w-4 h-4 text-emerald-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-white mb-2">{gap.gap}</p>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getImpactColor(gap.potential)}>
-                        Potential: {gap.potential}
-                      </Badge>
-                      <Badge className={
-                        gap.difficulty === "low" 
-                          ? "bg-emerald-500/20 text-emerald-400" 
-                          : gap.difficulty === "medium"
-                            ? "bg-amber-500/20 text-amber-400"
-                            : "bg-red-500/20 text-red-400"
-                      }>
-                        Difficulty: {gap.difficulty}
-                      </Badge>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <ArrowUpRight className="w-4 h-4 text-slate-400" />
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-
-          {/* AI Insights */}
-          <Card className="p-4 bg-gradient-to-r from-violet-600/10 to-cyan-600/10 border-violet-500/30">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-4 h-4 text-violet-400" />
-              <span className="text-sm font-semibold text-violet-300">AI Market Insight</span>
-            </div>
-            <p className="text-sm text-slate-300 mb-3">
-              Based on current trends, focusing on AI-driven project estimation could capture 
-              an underserved market segment with estimated 31% adoption rate within 6 months.
-            </p>
-            <Button variant="outline" size="sm" className="text-violet-300 border-violet-500/50 hover:bg-violet-500/20">
-              <ExternalLink className="w-3 h-3 mr-2" />
-              View Full Analysis
-            </Button>
-          </Card>
-        </div>
+        <section className="space-y-4">
+          <h3 className="flex items-center gap-2 font-display text-lg font-semibold"><Target className="h-5 w-5 text-success" />Market gaps</h3>
+          {gapsLoading ? <Card className="panel p-6 text-sm text-muted-foreground">Loading saved gaps…</Card> : gaps.length === 0 ? <Card className="panel p-6 text-sm text-muted-foreground">No market gaps saved yet.</Card> : gaps.map((gap) => <GapCard key={gap.id} gap={gap} />)}
+          {analysis && <Card className="panel space-y-3 p-4"><div className="flex items-center gap-2 font-semibold text-foreground"><Zap className="h-4 w-4 text-brand" />Latest AI review</div><p className="whitespace-pre-wrap text-sm text-muted-foreground">{analysis}</p></Card>}
+        </section>
       </div>
     </div>
   );
 };
+
+function TrendCard({ trend, onStatusChange }: { trend: Trend; onStatusChange: (trend: Trend, status: (typeof statuses)[number]) => void }) {
+  return (
+    <Card className="panel space-y-4 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h4 className="font-semibold text-foreground">{trend.title}</h4>
+          <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground"><span>{trend.source}</span><span aria-hidden="true">·</span><span><Clock className="mr-1 inline h-3 w-3" />{new Date(trend.detected_at).toLocaleDateString()}</span></p>
+        </div>
+        <Select value={trend.status} onValueChange={(status) => onStatusChange(trend, status as (typeof statuses)[number])}>
+          <SelectTrigger aria-label={`Status for ${trend.title}`} className="h-8 w-36"><SelectValue /></SelectTrigger>
+          <SelectContent>{statuses.map((status) => <SelectItem key={status} value={status}>{statusIcon(status)}<span className="ml-2">{status}</span></SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="outline" className={impactTone[trend.impact] ?? impactTone.low}>{trend.impact} impact</Badge>
+        <Badge variant="outline" className="border-border text-muted-foreground">{trend.relevance}% relevance</Badge>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-surface-2"><div className="h-full rounded-full bg-brand-2" style={{ width: `${Math.max(0, Math.min(100, trend.relevance))}%` }} /></div>
+      {trend.competitors.length > 0 && <p className="text-xs text-muted-foreground">Competitors: {trend.competitors.join(", ")}</p>}
+      {trend.opportunity && <p className="flex items-start gap-2 text-sm text-foreground"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-success" />{trend.opportunity}</p>}
+    </Card>
+  );
+}
+
+function GapCard({ gap }: { gap: MarketGap }) {
+  return (
+    <Card className="panel flex items-start gap-3 p-4">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-success/10 text-success"><Target className="h-4 w-4" /></span>
+      <div className="min-w-0 flex-1 space-y-3">
+        <p className="text-sm text-foreground">{gap.gap}</p>
+        <div className="flex flex-wrap gap-2"><Badge variant="outline" className={impactTone[gap.potential] ?? impactTone.low}>Potential: {gap.potential}</Badge><Badge variant="outline" className="border-border text-muted-foreground">Difficulty: {gap.difficulty}</Badge></div>
+      </div>
+    </Card>
+  );
+}
